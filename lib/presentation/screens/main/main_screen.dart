@@ -85,7 +85,8 @@ class MainScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final BottomNavController bottomNavController = Get.put(BottomNavController());
+    final BottomNavController bottomNavController =
+        Get.put(BottomNavController());
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: CustomBottomNavBar(

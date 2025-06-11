@@ -28,11 +28,16 @@ import '../../presentation/widgets/subscription_plans/subscription_plans.dart';
 import 'route_path.dart';
 
 class AppRouter {
-  static final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
-  static final _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
-  static final _scanNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'scan');
-  static final _historyNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'history');
-  static final _profileNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
+  static final _rootNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'root');
+  static final _homeNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'home');
+  static final _scanNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'scan');
+  static final _historyNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'history');
+  static final _profileNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'profile');
 
   static final GoRouter initRoute = GoRouter(
     navigatorKey: _rootNavigatorKey,
