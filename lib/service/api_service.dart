@@ -55,9 +55,9 @@ class ApiClient {
       BuildContext? context}) async {
     /// ======================- Check Internet ===================
 
-    if (!await (connectionChecker.isConnected)) {
-      return Response(statusCode: 503, statusText: noInternetConnection);
-    }
+    // if (!await (connectionChecker.isConnected)) {
+    //   return Response(statusCode: 503, statusText: noInternetConnection);
+    // }
 
     if (showResult) {
       log.i(
@@ -135,15 +135,15 @@ class ApiClient {
       {required String url,
       bool isBasic = false,
       Map<String, dynamic>? body,
-      required BuildContext context,
+      // required BuildContext context,
       int duration = 30,
       bool showResult = true}) async {
     try {
       /// ======================- Check Internet ===================
 
-      if (!await (connectionChecker.isConnected)) {
-        return Response(statusCode: 503, statusText: noInternetConnection);
-      }
+      // if (!await (connectionChecker.isConnected)) {
+      //   return Response(statusCode: 503, statusText: noInternetConnection);
+      // }
 
       if (showResult) {
         log.i(

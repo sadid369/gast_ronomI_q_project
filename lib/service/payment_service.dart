@@ -1,31 +1,37 @@
-import 'dart:async';
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:get_it/get_it.dart'; // Import GetIt for dependency resolution
 import 'package:go_router/go_router.dart';
-import 'package:groc_shopy/helper/extension/base_extension.dart';
-import 'package:http/http.dart' as http;
 import 'package:groc_shopy/global/model/subscription_plan.dart';
+import 'package:groc_shopy/helper/extension/base_extension.dart';
 
 import '../core/routes/route_path.dart';
+import 'api_service.dart';
+import 'api_url.dart'; // Import ApiClient from your network module
 
 class PaymentService {
-  static const String _baseUrl = 'http://10.0.70.145:8001';
-  static const String _createPaymentIntentEndpoint =
-      '/subscription/api/v1/create-payment-intent/';
+  // Use ApiUrl class for dynamic URL construction
+  static const String _baseUrl = ApiUrl.baseUrl;
+  static const String _createPaymentIntentEndpoint = ApiUrl
+      .confirmSubscription; // Adjust this to your endpoint for payment intent creation
   static const String _subscriptionPlansEndpoint =
-      '/subscriptions_plan/api/v1/subscription/plans/';
+      ApiUrl.subscriptionPackages; // Adjust this to the appropriate endpoint
 
-  // Fetch available subscription plans
+  // Fetch available subscription plans using ApiClient
   static Future<List<SubscriptionPlan>> getSubscriptionPlans() async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl$_subscriptionPlansEndpoint'),
-        headers: {'Content-Type': 'application/json'},
+      // Resolving ApiClient instance from GetIt
+      final apiClient = GetIt.instance<ApiClient>();
+
+      final response = await apiClient.get(
+        url: '$_baseUrl$_subscriptionPlansEndpoint',
+        isBasic: true, // Adjust based on your API's authentication method
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final List<dynamic> data = response.body;
         return data.map((plan) => SubscriptionPlan.fromJson(plan)).toList();
       } else {
         throw Exception(
@@ -36,23 +42,28 @@ class PaymentService {
     }
   }
 
-  // Create payment intent with selected plan
+  // Create payment intent with the selected plan using ApiClient
   static Future<String?> createPaymentIntent(String planId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl$_createPaymentIntentEndpoint'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'plan_id': planId}),
+      // Resolving ApiClient instance from GetIt
+      final apiClient = GetIt.instance<ApiClient>();
+
+      final response = await apiClient.post(
+        url: '$_baseUrl$_createPaymentIntentEndpoint',
+        body: {'plan_id': planId},
+        // context: null, // Provide the context if needed for error handling
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.body;
         return data['client_secret'];
       } else {
         throw Exception('API call failed with status: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error creating payment intent: $e');
+      throw Exception(
+        'Error creating payment intent: $e',
+      );
     }
   }
 
@@ -125,12 +136,12 @@ class PaymentService {
     } catch (e) {
       // Dismiss loading if still showing
       if (context.mounted) {
-        // Navigator.of(context, rootNavigator: true).pop();
         _showErrorDialog(context, e.toString());
       }
     }
   }
 
+  // Show success dialog
   static void _showSuccessDialog(BuildContext context, String planName) {
     showDialog(
       context: context,
@@ -153,6 +164,7 @@ class PaymentService {
     );
   }
 
+  // Show error dialog
   static void _showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
