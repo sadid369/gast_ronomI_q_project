@@ -15,6 +15,8 @@ import 'package:groc_shopy/utils/static_strings/static_strings.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
 
 import '../../../core/routes/route_path.dart';
+import '../../../global/model/subscription_plan.dart';
+import '../../../service/payment_service.dart';
 import '../../widgets/custom_bottons/custom_button/app_button.dart';
 import '../../widgets/custom_navbar/navbar_controller.dart';
 import '../../widgets/payment_modal/payment_modal.dart';
@@ -499,46 +501,117 @@ Widget _buildRoleTab(String title, bool selected, VoidCallback onTap) {
   );
 }
 
+// class UpgradeBanner extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     void _showSubscriptionPlansAndPay() {
+//       showModalBottomSheet(
+//         context: context,
+//         isScrollControlled: true,
+//         backgroundColor: Colors.transparent,
+//         builder: (_) => SubscriptionPlansBottomSheet(
+//           plans: [
+//             SubscriptionPlan(
+//               title: AppStrings.monthlyPremiumPlan,
+//               price: '\$9.99',
+//               features: [AppStrings.moreScan, AppStrings.unlockMonthlyReport],
+//             ),
+//             SubscriptionPlan(
+//               title: AppStrings.yearlyPremiumPlan,
+//               price: '\$60.99',
+//               features: [
+//                 AppStrings.unlimitedScan,
+//                 AppStrings.unlockYearlyReport,
+//               ],
+//             ),
+//           ],
+//           onSubscribe: (selectedPlan) {},
+//         ),
+//       );
+//     }
+
+//     return Container(
+//       alignment: Alignment.center,
+//       width: 349.w,
+//       height: 118.h,
+//       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+//       decoration: BoxDecoration(
+//         color: const Color(0xFFFCCB5E),
+//         borderRadius: BorderRadius.circular(8),
+//       ),
+//       child: Column(
+//         mainAxisAlignment: MainAxisAlignment.spaceAround,
+//         crossAxisAlignment: CrossAxisAlignment.center,
+//         children: [
+//           Text(
+//             AppStrings.appName.tr,
+//             style: AppStyle.robotoSerif16w700CFFFFFF,
+//           ),
+//           Text(
+//             AppStrings.unlockExclusiveFeatures.tr,
+//             textAlign: TextAlign.center,
+//             style: AppStyle.roboto11w400CFFFFFF,
+//           ),
+//           AppButton(
+//             width: 170.w,
+//             height: 32.h,
+//             backgroundColor: Colors.white,
+//             borderRadius: 20,
+//             text: AppStrings.upgradeNow.tr,
+//             textStyle: AppStyle.inter14w500C000000,
+//             onPressed: _showSubscriptionPlansAndPay,
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 class UpgradeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    void _showSubscriptionPlansAndPay() {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => SubscriptionPlansBottomSheet(
-          plans: [
-            SubscriptionPlan(
-              title: AppStrings.monthlyPremiumPlan,
-              price: '\$9.99',
-              features: [AppStrings.moreScan, AppStrings.unlockMonthlyReport],
-            ),
-            SubscriptionPlan(
-              title: AppStrings.yearlyPremiumPlan,
-              price: '\$60.99',
-              features: [
-                AppStrings.unlimitedScan,
-                AppStrings.unlockYearlyReport,
-              ],
-            ),
-          ],
-          onSubscribe: (selectedPlan) {
-            // Navigator.of(context).pop(); // close bottom sheet first
+    Future<void> _showSubscriptionPlansAndPay() async {
+      try {
+        // Show loading using root navigator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
 
-            // Then open PayPal page:
-            // Navigator.of(context).push(
-            //   MaterialPageRoute(
-            //     builder: (_) => PaypalPage(plan: selectedPlan),
-            //   ),
-            // );
-            // context.goNamed(
-            //   RoutePath.paypal,
-            //   extra: selectedPlan,
-            // );
-          },
-        ),
-      );
+        // Fetch plans
+        final plans = await PaymentService.getSubscriptionPlans();
+
+        // Dismiss loading
+        Navigator.of(context, rootNavigator: true).pop();
+
+        // Show plans using root navigator
+        if (context.mounted) {
+          await showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => SubscriptionPlansBottomSheet(
+              plans: plans,
+              onSubscribe: (selectedPlan) async {
+                // Navigator.of(context).pop(); // Close plans sheet
+                await PaymentService.handlePayment(
+                  selectedPlan.planId,
+                  context,
+                  planName: selectedPlan.name,
+                );
+              },
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        }
+      }
     }
 
     return Container(

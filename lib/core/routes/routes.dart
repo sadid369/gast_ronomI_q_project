@@ -14,6 +14,7 @@ import 'package:groc_shopy/presentation/screens/home/home_screen.dart';
 import 'package:groc_shopy/presentation/screens/main/main_screen.dart';
 import 'package:groc_shopy/presentation/screens/profile/profile_screen.dart';
 import 'package:groc_shopy/presentation/screens/scan/scan_screen.dart';
+import 'package:groc_shopy/presentation/screens/stripe/stripe_payment_screen.dart';
 import 'package:groc_shopy/presentation/screens/transaction_history/transaction_history_screen.dart';
 import 'package:groc_shopy/presentation/widgets/payment_modal/payment_modal.dart';
 import 'package:groc_shopy/presentation/widgets/paypal/paypal.dart';
@@ -50,6 +51,12 @@ class AppRouter {
         path: RoutePath.splashScreen.addBasePath,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        name: RoutePath.stripe,
+        path: RoutePath.stripe.addBasePath,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => StripePaymentScreen(),
       ),
 
       GoRoute(
@@ -144,20 +151,20 @@ class AppRouter {
         builder: (context, state) => const PaymentModal(),
       ),
 
-      GoRoute(
-        name: RoutePath.paypal,
-        path: RoutePath.paypal.addBasePath,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          final plan = state.extra as SubscriptionPlan?;
-          if (plan == null) {
-            return const Scaffold(
-              body: Center(child: Text('No subscription plan provided')),
-            );
-          }
-          return PaypalPage(plan: plan);
-        },
-      ),
+      // GoRoute(
+      //   name: RoutePath.paypal,
+      //   path: RoutePath.paypal.addBasePath,
+      //   parentNavigatorKey: _rootNavigatorKey,
+      //   builder: (context, state) {
+      //     final plan = state.extra as SubscriptionPlan?;
+      //     if (plan == null) {
+      //       return const Scaffold(
+      //         body: Center(child: Text('No subscription plan provided')),
+      //       );
+      //     }
+      //     return PaypalPage(plan: plan);
+      //   },
+      // ),
 
       ///======================= Auth Routes =======================
       GoRoute(

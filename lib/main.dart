@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get/get.dart';
 import 'package:camera/camera.dart';
 import 'package:groc_shopy/utils/static_strings/static_strings.dart';
@@ -15,10 +16,9 @@ late final List<CameraDescription> cameras;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize cameras if needed, or do other async initialization here
-  // cameras = await availableCameras();
-
-  // Initialize LanguageController and load saved language
+  Stripe.publishableKey =
+      'pk_test_51QvcVcH5cscgBQuXnttFXi0clmPxZZqTQXW8GglPJFHSoOw59eSJYhguuPw6vvFsxx7Sti0CLDiLKkOJoeKn7Bi9002MxBwL47';
+  await Stripe.instance.applySettings();
   final LanguageController languageController = Get.put(LanguageController());
   await languageController.getLanguageType();
 
