@@ -9,6 +9,7 @@ class AppConstants {
   static var transLan = "transLan";
   static var userID = "userID";
   static var userRole = "userRole";
+  static var admin = "admin";
 
   static var token = "token";
   static const String language = 'isEnglish';

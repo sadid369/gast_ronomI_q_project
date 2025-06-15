@@ -8,9 +8,12 @@ import '../../../../core/routes/route_path.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../dependency_injection/path.dart';
 import '../../../../global/model/user.dart';
+import '../../../../helper/local_db/local_db.dart';
 import '../../../../service/api_service.dart';
 import '../../../../service/api_url.dart';
 import '../../../../service/check_api.dart';
+import '../../../../utils/app_const/app_const.dart';
+import '../../../../utils/static_strings/static_strings.dart';
 
 class AuthController extends GetxController {
   Rx<TextEditingController> fullNameController =
@@ -33,54 +36,52 @@ class AuthController extends GetxController {
 
   /// =================== Save Info ===================
 
-  // saveInformation({required Response<dynamic> response}) {
-  //   // dbHelper.storeTokenUserdata(
-  //   //     token: response.body["data"]["accessToken"],
-  //   //     role: response.body["data"]["role"]);
+  saveInformation({required Response<dynamic> response}) {
+    // dbHelper.storeTokenUserdata(
+    //     token: response.body["data"]["accessToken"],
+    //     role: response.body["data"]["role"]);
 
-  //   SharePrefsHelper.setString(
-  //       AppConstants.token, response.body["data"]["accessToken"]);
-  //   SharePrefsHelper.setString(
-  //       AppConstants.userRole, response.body["data"]["role"]);
-  // }
+    SharedPrefsHelper.setString(
+        AppConstants.token, response.body["data"]["accessToken"]);
+    SharedPrefsHelper.setString(
+        AppConstants.userRole, response.body["data"]["role"]);
+  }
 
   ///============================ Sign In =========================
   RxBool signInLoading = false.obs;
 
-  // signIn({required BuildContext context}) async {
-  //   signInLoading.value = true;
+  signIn({required BuildContext context}) async {
+    signInLoading.value = true;
 
-  //   var body = {
-  //     "email": emailController.value.text,
-  //     "password": passController.value.text
-  //   };
-  //   var response = await apiClient.post(
-  //       showResult: false,
-  //       context: context,
-  //       body: body,
-  //       isBasic: true,
-  //       url: isClient.value
-  //           ? ApiUrl.signInClient.addBaseUrl
-  //           : ApiUrl.signInWorker.addBaseUrl);
+    var body = {
+      "email": emailController.value.text,
+      "password": passController.value.text
+    };
+    var response = await apiClient.post(
+        showResult: true,
+        body: body,
+        isBasic: true,
+        url: ApiUrl.signInClient.addBaseUrl);
 
-  //   // // Ensure the widget is still mounted before using BuildContext
-  //   // if (!context.mounted) return;
+    // // Ensure the widget is still mounted before using BuildContext
+    // if (!context.mounted) return;
 
-  //   if (response.statusCode == 200) {
-  //     saveInformation(response: response);
-  //     if (response.body["data"]["role"] == AppStrings.roleCLIENT) {
-  //       AppRouter.route.replaceNamed(RoutePath.clientHome);
-  //     } else {
-  //       AppRouter.route.replaceNamed(RoutePath.workerHome);
-  //     }
-  //   } else {
-  //     // ignore: use_build_context_synchronously
-  //     checkApi(response: response, context: context);
-  //   }
+    // if (response.statusCode == 200) {
+    //   saveInformation(response: response);
+    //   if (response.body["data"]["role"] == AppConstants.admin) {
+    //   } else {
+    //     AppRouter.route.replaceNamed(RoutePath.workerHome);
+    //   }
+    if (response.statusCode == 200) {
+      AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
+    } else {
+      // ignore: use_build_context_synchronously
+      checkApi(response: response, context: context);
+    }
 
-  //   signInLoading.value = false;
-  //   signInLoading.refresh();
-  // }
+    signInLoading.value = false;
+    signInLoading.refresh();
+  }
 
   ///============================ Sign Up =========================
   RxBool signUpLoading = false.obs;

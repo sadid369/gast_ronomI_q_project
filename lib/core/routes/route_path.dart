@@ -38,7 +38,8 @@ class RoutePath {
   static const String paymentModal = 'paymentModal';
 
   //==================================== Client screens =====================================
-  static const String clientHome = 'clientHome';
+  static const String adminHome = 'adminHome';
+  static const String employeeHome = 'employeeHome';
   static const String mySubscription = 'mySubscription';
   static const String subscriptionPackages = 'subscriptionPackages';
   static const String reqService = 'reqService';
