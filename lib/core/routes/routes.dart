@@ -98,10 +98,10 @@ class AppRouter {
                     name: RoutePath.scannedItemsScreen,
                     path: RoutePath.scannedItemsScreen.addBasePath,
                     pageBuilder: (context, state) {
-                      final image = state.extra as File;
+                      final image = state.extra as Map<String, dynamic>;
                       return MaterialPage(
                         key: state.pageKey,
-                        child: ScannedItemsScreen(image: image),
+                        child: ScannedItemsScreen(extras: image),
                       );
                     },
                   ),

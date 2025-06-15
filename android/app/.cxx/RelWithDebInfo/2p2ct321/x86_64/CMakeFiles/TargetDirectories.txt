@@ -1,0 +1,2 @@
+/Users/binarybards/Downloads/gast_ronomI_q_project/android/app/.cxx/RelWithDebInfo/2p2ct321/x86_64/CMakeFiles/edit_cache.dir
+/Users/binarybards/Downloads/gast_ronomI_q_project/android/app/.cxx/RelWithDebInfo/2p2ct321/x86_64/CMakeFiles/rebuild_cache.dir
