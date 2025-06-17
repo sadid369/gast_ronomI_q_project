@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
 import '../../../core/custom_assets/assets.gen.dart';
 import '../../../core/routes/route_path.dart';
 import '../../../utils/app_colors/app_colors.dart';
@@ -97,6 +99,33 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+  Widget _buildLoadingOverlay() {
+    return Stack(
+      children: [
+        // blur the background
+        Positioned.fill(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+            child: Container(color: Colors.black.withOpacity(0)),
+          ),
+        ),
+        // semi‐transparent dark overlay
+        Positioned.fill(
+          child: Container(color: Colors.black.withOpacity(0.3)),
+        ),
+        // your Lottie animation
+        Center(
+          child: Lottie.asset(
+            'assets/animation/working.json',
+            width: 300,
+            height: 300,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showErrorDialog(String message) {
     print('Error: $message');
     showDialog(
@@ -134,34 +163,35 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Custom Top Bar (like AppBar)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: AppColors.backgroundColor,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const SizedBox(),
-                  Text(
-                    AppStrings.scanner.tr,
-                    style: AppStyle.kohSantepheap16w700C3F3F3F,
+    return Stack(
+      children: [
+        // your entire UI
+        Scaffold(
+          backgroundColor: AppColors.backgroundColor,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Custom Top Bar (like AppBar)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  color: AppColors.backgroundColor,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(),
+                      Text(
+                        AppStrings.scanner.tr,
+                        style: AppStyle.kohSantepheap16w700C3F3F3F,
+                      ),
+                      const Icon(Icons.more_horiz, color: Colors.grey),
+                    ],
                   ),
-                  const Icon(Icons.more_horiz, color: Colors.grey),
-                ],
-              ),
-            ),
+                ),
 
-            // Expanded image + scanning UI area
-            Expanded(
-              child: Stack(
-                children: [
-                  // Scanner UI
-                  Center(
+                // Expanded image + scanning UI area
+                Expanded(
+                  child: Center(
+                    // Scanner UI
                     child: AspectRatio(
                       aspectRatio: 1,
                       child: Stack(
@@ -261,56 +291,50 @@ class _ScanScreenState extends State<ScanScreen> {
                       ),
                     ),
                   ),
+                ),
 
-                  // Loading overlay
-                  if (_isLoading)
-                    Container(
-                      color: Colors.black.withOpacity(0.5),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.yellowFFD673),
+                // Bottom Controls bar
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  color: AppColors.backgroundColor,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(width: 32),
+                      GestureDetector(
+                        onTap: _isLoading ? null : _takePicture,
+                        child: Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _isLoading ? Colors.grey : Colors.black54,
+                              width: 4,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-
-            // Bottom Controls bar
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              color: AppColors.backgroundColor,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(width: 32),
-                  GestureDetector(
-                    onTap: _isLoading ? null : _takePicture,
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _isLoading ? Colors.grey : Colors.black54,
-                          width: 4,
-                        ),
+                      const SizedBox(width: 32),
+                      IconButton(
+                        icon: const Icon(Icons.photo_library_outlined),
+                        onPressed: _isLoading ? null : _pickImage,
+                        color: _isLoading ? Colors.grey : Colors.black,
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 32),
-                  IconButton(
-                    icon: const Icon(Icons.photo_library_outlined),
-                    onPressed: _isLoading ? null : _pickImage,
-                    color: _isLoading ? Colors.grey : Colors.black,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+
+        // full‐screen loading overlay
+        if (_isLoading)
+          Positioned.fill(
+            child: _buildLoadingOverlay(),
+          ),
+      ],
     );
   }
 }

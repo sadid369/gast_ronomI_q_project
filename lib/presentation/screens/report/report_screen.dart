@@ -35,6 +35,7 @@ class _ReportScreenState extends State<ReportScreen> {
   Map<String, double> dataMap = {}; // Start with an empty map
 
   final List<Color> colorList = const [
+    Color.fromARGB(121, 239, 38, 38),
     Color(0xFFDDDDDD),
     Color(0xFFCF8989),
     Color(0xFF9ACF89),

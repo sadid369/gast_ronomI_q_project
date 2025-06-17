@@ -37,7 +37,7 @@ class PurchaseCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(8.r),
             child: SizedBox(
               height: 150.h,
-              child: Image.asset(
+              child: Image.network(
                 imageUrl,
                 fit: BoxFit.fitHeight,
               ),

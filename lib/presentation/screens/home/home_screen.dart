@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -17,6 +19,45 @@ import '../../widgets/purchase_history_item/purchase_history_item.dart';
 import '../../widgets/subscription_plans/subscription_plans.dart';
 import '../../widgets/subscription_modal/subscription_modal.dart';
 
+// Model classes
+class RecentOrder {
+  final int receiptId;
+  final String shopName, createdAt;
+  final double totalAmount;
+  final List<RecentItem> items;
+  RecentOrder({
+    required this.receiptId,
+    required this.shopName,
+    required this.createdAt,
+    required this.totalAmount,
+    required this.items,
+  });
+  factory RecentOrder.fromJson(Map<String, dynamic> j) => RecentOrder(
+        receiptId: j['receipt_id'],
+        shopName: j['shop_name'],
+        createdAt: j['created_at'],
+        totalAmount: (j['total_amount'] as num).toDouble(),
+        items: (j['items'] as List).map((e) => RecentItem.fromJson(e)).toList(),
+      );
+}
+
+class RecentItem {
+  final String itemName, category, categoryImage;
+  final double price;
+  RecentItem({
+    required this.itemName,
+    required this.category,
+    required this.price,
+    required this.categoryImage,
+  });
+  factory RecentItem.fromJson(Map<String, dynamic> j) => RecentItem(
+        itemName: j['item_name'],
+        category: j['category'],
+        price: (j['price'] as num).toDouble(),
+        categoryImage: j['category_image'],
+      );
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -26,11 +67,35 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final LanguageController _languageController = Get.find();
+  List<RecentItem> _items = [];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
+    _fetchRecentOrders();
     _showSubscriptionModal();
+  }
+
+  Future<void> _fetchRecentOrders() async {
+    final resp = await http.get(
+      Uri.parse('http://10.0.70.145:8001/report/orders/recent/'),
+      headers: {
+        'Authorization':
+            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyNTMwMjEwLCJpYXQiOjE3NDk5MzgyMTAsImp0aSI6ImNkZmQwZjE4Yjg5OTQ0OGM4YzY1ZWFiOTZhZGUxZjJmIiwidXNlcl9pZCI6MjZ9.RtRRXxJSqzdjQSyxQJ1N4uoPgoNm2Ms1okC8qFMWoBU',
+      },
+    );
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body);
+      final order = RecentOrder.fromJson(data);
+      setState(() {
+        _items = order.items;
+        _loading = false;
+      });
+    } else {
+      // handle error
+      setState(() => _loading = false);
+    }
   }
 
   void _showSubscriptionModal() {
@@ -50,24 +115,26 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                Gap(24.h),
-                _buildMonthlyReportCard(),
-                Gap(24.h),
-                _buildMonthlyGrocerySpendingSection(),
-                Gap(8.h),
-                _buildExpensesCards(),
-                Gap(24.h),
-                _buildRecentPurchasesSection(),
-                Gap(24.h),
-                _buildPurchaseHistorySection(),
-              ],
-            ),
-          ),
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      Gap(24.h),
+                      _buildMonthlyReportCard(),
+                      Gap(24.h),
+                      _buildMonthlyGrocerySpendingSection(),
+                      Gap(8.h),
+                      _buildExpensesCards(),
+                      Gap(24.h),
+                      _buildRecentPurchasesSection(),
+                      Gap(24.h),
+                      _buildPurchaseHistorySection(),
+                    ],
+                  ),
+                ),
         ),
       ),
     );
@@ -402,6 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecentPurchasesSection() {
+    final recent3 = _items.take(3).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -414,26 +482,14 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 210.h,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            children: [
-              PurchaseCard(
-                category: 'Dairy',
-                name: 'Milk',
-                price: '\$8.50',
-                imageUrl: Assets.images.dairy.path,
-              ),
-              PurchaseCard(
-                category: 'Meat',
-                name: 'Chicken Breast',
-                price: '\$8.50',
-                imageUrl: Assets.images.meat.path,
-              ),
-              PurchaseCard(
-                category: 'Vegetables',
-                name: 'Broccoli',
-                price: '\$2.00',
-                imageUrl: Assets.images.brocoli.path,
-              ),
-            ],
+            children: recent3.map((it) {
+              return PurchaseCard(
+                category: it.category,
+                name: it.itemName,
+                price: '\$${it.price}',
+                imageUrl: it.categoryImage,
+              );
+            }).toList(),
           ),
         ),
       ],
@@ -445,29 +501,19 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildPurchaseHistoryHeader(),
-        ListView(
+        ListView.builder(
           physics: const NeverScrollableScrollPhysics(),
           shrinkWrap: true,
-          children: [
-            PurchaseHistoryItem(
-              item: 'Milk',
-              category: 'Dairy',
-              price: '\$2.50',
-              imageUrl: Assets.icons.milk.path,
-            ),
-            PurchaseHistoryItem(
-              item: 'Bread',
-              category: 'Bakery',
-              price: '\$1.80',
-              imageUrl: Assets.icons.bread.path,
-            ),
-            PurchaseHistoryItem(
-              item: 'Apples',
-              category: 'Fruits',
-              price: '\$3.00',
-              imageUrl: Assets.icons.apples.path,
-            ),
-          ],
+          itemCount: _items.length,
+          itemBuilder: (_, i) {
+            final it = _items[i];
+            return PurchaseHistoryItem(
+              item: it.itemName,
+              category: it.category,
+              price: '\$${it.price}',
+              imageUrl: it.categoryImage,
+            );
+          },
         ),
       ],
     );

@@ -21,7 +21,7 @@ class PurchaseHistoryItem extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: Image.asset(
+          leading: Image.network(
             imageUrl,
             height: 24.h,
             width: 24.w,
