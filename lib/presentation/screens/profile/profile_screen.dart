@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -13,9 +14,11 @@ import 'package:groc_shopy/core/custom_assets/assets.gen.dart';
 import 'package:groc_shopy/utils/app_colors/app_colors.dart';
 import 'package:groc_shopy/utils/static_strings/static_strings.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../core/routes/route_path.dart';
 import '../../../global/model/subscription_plan.dart';
+import '../../../global/model/user_order_list.dart';
 import '../../../service/payment_service.dart';
 import '../../widgets/custom_bottons/custom_button/app_button.dart';
 import '../../widgets/custom_navbar/navbar_controller.dart';
@@ -33,11 +36,14 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   final BottomNavController controller = Get.find<BottomNavController>();
-  bool isTotal = true;
+  bool isTotal = false; // false = Recent, true = All
   late TabController _tabController;
 
   File? _profileImageFile;
   final ImagePicker _picker = ImagePicker();
+
+  bool _isLoadingOrders = false;
+  List<Order> _userOrders = [];
 
   final List<Map<String, dynamic>> recently = [
     {
@@ -91,15 +97,35 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _fetchOrders();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  Future<void> _fetchOrders() async {
+    setState(() => _isLoadingOrders = true);
 
-// Inside your widget's build or a method:
+    final uri = Uri.parse(
+        'http://10.0.70.145:8001/report/api/v1/user_order_list/?page=1');
+    final resp = await http.get(
+      uri,
+      headers: {
+        'Authorization':
+            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyNzk4MTQ0LCJpYXQiOjE3NTAyMDYxNDQsImp0aSI6IjFlODJjOTYyM2NjOTQwMmM4ZjRiMmU4NTZmMDdmZWNiIiwidXNlcl9pZCI6NjF9.JvbGT7P2-Y4rKq47Yj71-8j0IIFiQ9P_nbbhx-bvAUw',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (resp.statusCode == 200) {
+      final jsonBody = json.decode(resp.body) as Map<String, dynamic>;
+      final response = UserOrderListResponse.fromJson(jsonBody);
+      setState(() {
+        _userOrders = response.orders;
+        _isLoadingOrders = false;
+      });
+    } else {
+      setState(() => _isLoadingOrders = false);
+      // handle error
+    }
+  }
 
   Future<void> _showPickOptionsDialog() async {
     showModalBottomSheet(
@@ -284,6 +310,37 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  Widget receiptItemFromOrder(Order order) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 8.h),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          Image.network(order.image,
+              width: 70.w, height: 70.h, fit: BoxFit.cover),
+          Gap(10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(order.shopName, style: AppStyle.roboto12w400C000000),
+                Gap(4.h),
+                Text(
+                  'Items: ${order.categories.map((c) => c.name).join(', ')}',
+                  style: AppStyle.roboto10w400CB2000000,
+                ),
+              ],
+            ),
+          ),
+          Text('\$${order.totalAmount}', style: AppStyle.roboto12w400CFFD673),
+          Gap(10.w),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -426,39 +483,34 @@ class _ProfileScreenState extends State<ProfileScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildRoleTab(AppStrings.recently.tr, !isTotal, () {
-                  setState(() {
-                    isTotal = false;
-                    _tabController.animateTo(0);
-                  });
-                }),
-                _buildRoleTab(AppStrings.total.tr, isTotal, () {
-                  setState(() {
-                    isTotal = true;
-                    _tabController.animateTo(1);
-                  });
-                }),
+                _buildRoleTab(
+                  'Recent',
+                  !isTotal,
+                  () => setState(() => isTotal = false),
+                ),
+                _buildRoleTab(
+                  'All',
+                  isTotal,
+                  () => setState(() => isTotal = true),
+                ),
               ],
             ),
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: ListView.builder(
-                      itemCount: isTotal ? total.length : recently.length,
-                      itemBuilder: (context, index) {
-                        return receiptItem(
-                            isTotal ? total[index] : recently[index]);
-                      },
-                    ),
-                  ),
-                  const Center(
-                    child: Text('Total tab content'),
-                  ),
-                ],
-              ),
+              child: _isLoadingOrders
+                  ? Center(child: CircularProgressIndicator())
+                  : _userOrders.isEmpty
+                      ? Center(child: Text('No orders found'))
+                      : ListView.builder(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          itemCount: isTotal
+                              ? _userOrders.length
+                              : (_userOrders.length >= 3
+                                  ? 3
+                                  : _userOrders.length),
+                          itemBuilder: (_, i) {
+                            return receiptItemFromOrder(_userOrders[i]);
+                          },
+                        ),
             ),
           ],
         ),

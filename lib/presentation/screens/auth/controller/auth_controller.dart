@@ -208,4 +208,64 @@ class AuthController extends GetxController {
   //     return false;
   //   }
   // }
+  /// ====================== Send Reset OTP =======================
+  RxBool resetOtpLoading = false.obs;
+
+  Future<void> sendResetOtp({
+    required BuildContext context,
+    required String email,
+  }) async {
+    resetOtpLoading.value = true;
+    var body = {"email": email};
+    var response = await apiClient.post(
+      showResult: true,
+      body: body,
+      isBasic: true,
+      // url: '/user/api/v1/send-reset-otp/'.addBaseUrl,
+      url: "http://10.0.70.145:8001/user/api/v1/send-reset-otp/",
+    );
+    resetOtpLoading.value = false;
+
+    if (response.statusCode == 200) {
+      // on success navigate to verification screen
+      context.push(RoutePath.verification.addBasePath);
+    } else {
+      checkApi(response: response, context: context);
+    }
+  }
+
+  RxBool verifyResetOtpLoading = false.obs;
+
+  Future<void> verifyResetOtp({
+    required BuildContext context,
+    required String email,
+    required String otp,
+  }) async {
+    verifyResetOtpLoading.value = true;
+
+    final body = {
+      "email": email,
+      "otp": otp,
+    };
+
+    final response = await apiClient.post(
+      showResult: true,
+      body: body,
+      isBasic: true,
+      url: "http://10.0.70.145:8001/user/api/v1/verify-reset-otp/",
+    );
+
+    verifyResetOtpLoading.value = false;
+
+    if (response.statusCode == 200) {
+      final resetToken = response.body["reset_token"];
+      // pass resetToken (and maybe email) to the next screen
+      context.push(
+        RoutePath.resetPassConfirm.addBasePath,
+        extra: {"resetToken": resetToken, "email": email},
+      );
+    } else {
+      checkApi(response: response, context: context);
+    }
+  }
 }

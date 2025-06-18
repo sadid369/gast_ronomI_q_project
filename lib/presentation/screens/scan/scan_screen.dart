@@ -46,7 +46,7 @@ class _ScanScreenState extends State<ScanScreen> {
 
       // Add authorization header
       request.headers['Authorization'] =
-          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyNTMwMjEwLCJpYXQiOjE3NDk5MzgyMTAsImp0aSI6ImNkZmQwZjE4Yjg5OTQ0OGM4YzY1ZWFiOTZhZGUxZjJmIiwidXNlcl9pZCI6MjZ9.RtRRXxJSqzdjQSyxQJ1N4uoPgoNm2Ms1okC8qFMWoBU';
+          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyNzk4Mjg3LCJpYXQiOjE3NTAyMDYyODcsImp0aSI6IjU4ZjZlNWZmYmUzZDRjN2VhNTA0NGE5NmI5MWNjMTEyIiwidXNlcl9pZCI6NjF9.g7CJStsIGf_nMQsVdjLJmiilcC59jnq5yloneCB0K7Q';
 
       // Add file to request - IMPORTANT: field name is "receipt", not "file"
       final fileField = await http.MultipartFile.fromPath(
@@ -173,7 +173,8 @@ class _ScanScreenState extends State<ScanScreen> {
               children: [
                 // Custom Top Bar (like AppBar)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   color: AppColors.backgroundColor,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -295,7 +296,8 @@ class _ScanScreenState extends State<ScanScreen> {
 
                 // Bottom Controls bar
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   color: AppColors.backgroundColor,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
-import 'package:get/get.dart'; // for .tr translations
+import 'package:get/get.dart';
+import 'controller/auth_controller.dart'; // adjust import path if needed
 import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
 import '../../../core/custom_assets/assets.gen.dart';
@@ -24,8 +25,9 @@ class _CodeVerificationScreenState extends State<CodeVerificationScreen> {
   final List<TextEditingController> _controllers = [];
   final List<FocusNode> _focusNodes = [];
 
-  bool get _isCodeComplete =>
-      _controllers.every((c) => c.text.isNotEmpty);
+  final AuthController _authController = Get.find();
+
+  bool get _isCodeComplete => _controllers.every((c) => c.text.isNotEmpty);
 
   @override
   void initState() {
@@ -61,33 +63,42 @@ class _CodeVerificationScreenState extends State<CodeVerificationScreen> {
 
   void _verifyCode() {
     final code = _controllers.map((c) => c.text).join();
-    // TODO: add verification logic
-    context.push(RoutePath.resetPassConfirm.addBasePath);
+    final email = _authController.emailController.value.text;
+    _authController.verifyResetOtp(
+      context: context,
+      email: email,
+      otp: code,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32)
-              .w,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildBackButton(),
-              const Gap(16),
-              _buildHeader(),
-              const Gap(24),
-              _buildCodeInputFields(),
-              const Gap(24),
-              _buildVerifyButton(),
-              const Gap(16),
-              _buildResendRow(),
-            ],
+      body: Obx(() {
+        // you can show a loading overlay if you want
+        if (_authController.verifyResetOtpLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32).w,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildBackButton(),
+                const Gap(16),
+                _buildHeader(),
+                const Gap(24),
+                _buildCodeInputFields(),
+                const Gap(24),
+                _buildVerifyButton(),
+                const Gap(16),
+                _buildResendRow(),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 
@@ -170,8 +181,7 @@ class _CodeVerificationScreenState extends State<CodeVerificationScreen> {
       width: double.infinity,
       height: 48.h,
       backgroundColor: AppColors.yellowFFD673,
-      disabledBackgroundColor:
-          AppColors.yellowFFD673.withOpacity(0.4),
+      disabledBackgroundColor: AppColors.yellowFFD673.withOpacity(0.4),
       borderRadius: 10,
       textStyle: AppStyle.inter16w700CFFFFFF,
     );

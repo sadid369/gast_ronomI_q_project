@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 class AppButton extends StatelessWidget {
   final String text;
@@ -10,10 +11,12 @@ class AppButton extends StatelessWidget {
   final double borderRadius;
   final TextStyle textStyle;
   final bool enabled;
+  final bool? isLoading;
 
   const AppButton({
     Key? key,
     required this.text,
+    this.isLoading = false,
     this.onPressed,
     this.width = double.infinity,
     this.height = 48,
@@ -43,7 +46,14 @@ class AppButton extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        child: Text(text, style: textStyle),
+        child: isLoading!
+            ? Lottie.asset(
+                'assets/animation/working.json',
+                width: 80,
+                height: 80,
+                fit: BoxFit.contain,
+              )
+            : Text(text, style: textStyle),
       ),
     );
   }

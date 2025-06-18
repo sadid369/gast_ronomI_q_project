@@ -182,9 +182,8 @@ class AuthScreenState extends State<AuthScreen> {
         _buildForgotPasswordLink(context),
         _buildRememberMeCheckbox(),
         Gap(33.h),
-        _buildSignInButton(
-            // () => _authController.signIn(context: context),
-            () => context.push(RoutePath.home.addBasePath)),
+        _buildSignInButton(() => _authController.signIn(context: context)),
+        // () => context.push(RoutePath.home.addBasePath)),
         Gap(15.h),
         _buildSignUpOption(context),
       ],

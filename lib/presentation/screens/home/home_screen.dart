@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:http/http.dart' as http;
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
@@ -7,19 +8,16 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get/get.dart';
-import 'package:groc_shopy/core/routes/route_path.dart';
-import 'package:groc_shopy/helper/extension/base_extension.dart';
-import 'package:groc_shopy/utils/app_colors/app_colors.dart';
-import 'package:groc_shopy/utils/static_strings/static_strings.dart';
-import 'package:groc_shopy/utils/text_style/text_style.dart';
 import '../../../core/custom_assets/assets.gen.dart';
-import '../../../global/language/controller/language_controller.dart';
+import '../../../core/routes/route_path.dart';
+import '../../../utils/app_colors/app_colors.dart';
+import '../../../utils/static_strings/static_strings.dart';
+import '../../../utils/text_style/text_style.dart';
 import '../../widgets/purchase_card/purchase_card.dart';
 import '../../widgets/purchase_history_item/purchase_history_item.dart';
-import '../../widgets/subscription_plans/subscription_plans.dart';
 import '../../widgets/subscription_modal/subscription_modal.dart';
+import 'controller/home_controller.dart';
 
-// Model classes
 class RecentOrder {
   final int receiptId;
   final String shopName, createdAt;
@@ -66,36 +64,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final LanguageController _languageController = Get.find();
-  List<RecentItem> _items = [];
-  bool _loading = true;
+  final HomeController ctrl = Get.find<HomeController>();
 
   @override
   void initState() {
     super.initState();
-    _fetchRecentOrders();
     _showSubscriptionModal();
-  }
-
-  Future<void> _fetchRecentOrders() async {
-    final resp = await http.get(
-      Uri.parse('http://10.0.70.145:8001/report/orders/recent/'),
-      headers: {
-        'Authorization':
-            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyNTMwMjEwLCJpYXQiOjE3NDk5MzgyMTAsImp0aSI6ImNkZmQwZjE4Yjg5OTQ0OGM4YzY1ZWFiOTZhZGUxZjJmIiwidXNlcl9pZCI6MjZ9.RtRRXxJSqzdjQSyxQJ1N4uoPgoNm2Ms1okC8qFMWoBU',
-      },
-    );
-    if (resp.statusCode == 200) {
-      final data = json.decode(resp.body);
-      final order = RecentOrder.fromJson(data);
-      setState(() {
-        _items = order.items;
-        _loading = false;
-      });
-    } else {
-      // handle error
-      setState(() => _loading = false);
-    }
   }
 
   void _showSubscriptionModal() {
@@ -112,31 +86,34 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F3E8),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      Gap(24.h),
-                      _buildMonthlyReportCard(),
-                      Gap(24.h),
-                      _buildMonthlyGrocerySpendingSection(),
-                      Gap(8.h),
-                      _buildExpensesCards(),
-                      Gap(24.h),
-                      _buildRecentPurchasesSection(),
-                      Gap(24.h),
-                      _buildPurchaseHistorySection(),
-                    ],
-                  ),
-                ),
-        ),
-      ),
+      body: Obx(() {
+        if (ctrl.loading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  Gap(24.h),
+                  _buildMonthlyReportCard(),
+                  Gap(24.h),
+                  _buildMonthlyGrocerySpendingSection(),
+                  Gap(8.h),
+                  _buildExpensesCards(),
+                  Gap(24.h),
+                  _buildRecentPurchasesSection(),
+                  Gap(24.h),
+                  _buildPurchaseHistorySection(),
+                ],
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 
@@ -231,8 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (selected != null) {
-      _languageController
-          .changeLanguage(selected == 'en' ? "English" : "German");
+      ctrl.changeLanguage(selected);
     }
   }
 
@@ -469,7 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecentPurchasesSection() {
-    final recent3 = _items.take(3).toList();
+    final recent3 = ctrl.items.take(3).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -504,9 +480,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ListView.builder(
           physics: const NeverScrollableScrollPhysics(),
           shrinkWrap: true,
-          itemCount: _items.length,
+          itemCount: ctrl.items.length,
           itemBuilder: (_, i) {
-            final it = _items[i];
+            final it = ctrl.items[i];
             return PurchaseHistoryItem(
               item: it.itemName,
               category: it.category,
