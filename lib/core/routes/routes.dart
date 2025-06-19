@@ -154,7 +154,7 @@ class AppRouter {
                 path: RoutePath.profile.addBasePath,
                 pageBuilder: (ctx, state) => CustomTransitionPage(
                   key: state.pageKey,
-                  child: const ProfileScreen(),
+                  child: ProfileScreen(),
                   transitionsBuilder: _fadeTransition,
                 ),
               ),
@@ -185,21 +185,6 @@ class AppRouter {
           transitionsBuilder: _fadeTransition,
         ),
       ),
-
-      // GoRoute(
-      //   name: RoutePath.paypal,
-      //   path: RoutePath.paypal.addBasePath,
-      //   parentNavigatorKey: _rootNavigatorKey,
-      //   builder: (context, state) {
-      //     final plan = state.extra as SubscriptionPlan?;
-      //     if (plan == null) {
-      //       return const Scaffold(
-      //         body: Center(child: Text('No subscription plan provided')),
-      //       );
-      //     }
-      //     return PaypalPage(plan: plan);
-      //   },
-      // ),
 
       ///======================= Auth Routes =======================
       GoRoute(
@@ -241,7 +226,17 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (ctx, state) => CustomTransitionPage(
           key: state.pageKey,
-          child: const SetPasswordScreen(),
+          child: SetPasswordScreen(),
+          transitionsBuilder: _fadeTransition,
+        ),
+      ),
+      GoRoute(
+        name: RoutePath.resetPasswordSuccess,
+        path: RoutePath.resetPasswordSuccess.addBasePath,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (ctx, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const UpdatePasswordSuccessScreen(),
           transitionsBuilder: _fadeTransition,
         ),
       ),
@@ -258,23 +253,12 @@ class AppRouter {
       ),
 
       GoRoute(
-        name: RoutePath.resetPasswordSuccess,
-        path: RoutePath.resetPasswordSuccess.addBasePath,
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (ctx, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const UpdatePasswordSuccessScreen(),
-          transitionsBuilder: _fadeTransition,
-        ),
-      ),
-
-      GoRoute(
         name: RoutePath.report,
         path: RoutePath.report.addBasePath,
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (ctx, state) => CustomTransitionPage(
           key: state.pageKey,
-          child: const ReportScreen(),
+          child: ReportScreen(),
           transitionsBuilder: _fadeTransition,
         ),
       ),

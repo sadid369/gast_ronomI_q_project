@@ -10,7 +10,7 @@ import 'package:groc_shopy/utils/static_strings/static_strings.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
 
 import '../../../global/model/transaction_history.dart';
-import 'transaction_history_controller/transaction_history_controller.dart';
+import 'controller/transaction_history_controller.dart';
 
 class TransactionHistoryScreen extends StatelessWidget {
   TransactionHistoryScreen({Key? key}) : super(key: key);

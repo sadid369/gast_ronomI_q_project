@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import '../../../../global/model/transaction_history.dart';
+import '../../../../service/api_service.dart';
+import '../../../../dependency_injection/path.dart';
 
 class TransactionHistoryController extends GetxController {
   final history = Rxn<TransactionHistory>();
   final isLoading = false.obs;
   final errorMessage = RxnString();
+
+  final ApiClient _apiClient = serviceLocator<ApiClient>();
 
   @override
   void onInit() {
@@ -19,19 +22,16 @@ class TransactionHistoryController extends GetxController {
     errorMessage.value = null;
 
     try {
-      final resp = await http.get(
-        Uri.parse(
-          'http://10.0.70.145:8001/report/api/v1/daily-category-spending/',
-        ),
-        headers: {
-          'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUyNTMwMjEwLCJpYXQiOjE3NDk5MzgyMTAsImp0aSI6ImNkZmQwZjE4Yjg5OTQ0OGM4YzY1ZWFiOTZhZGUxZjJmIiwidXNlcl9pZCI6MjZ9.RtRRXxJSqzdjQSyxQJ1N4uoPgoNm2Ms1okC8qFMWoBU', // your token
-        },
+      final resp = await _apiClient.get(
+        url: 'http://10.0.70.145:8001/report/api/v1/daily-category-spending/',
+        showResult: true,
       );
 
       if (resp.statusCode == 200) {
-        history.value = TransactionHistory.fromJson(
-            json.decode(resp.body) as Map<String, dynamic>);
+        final jsonBody = resp.body is Map<String, dynamic>
+            ? resp.body
+            : json.decode(resp.body.toString());
+        history.value = TransactionHistory.fromJson(jsonBody);
       } else {
         errorMessage.value = 'Failed to load history: ${resp.statusCode}';
       }

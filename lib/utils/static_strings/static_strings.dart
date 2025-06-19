@@ -25,6 +25,7 @@ class AppStrings {
   static const String reEnterPassword = "Re-enter password";
   static const String confirmPasswordHint = "Confirm Password";
   static const String monthlyReport = 'Monthly Report';
+  static const String reportofMonth = 'Report of Month';
   static const String updatePassword = 'Update Password';
   static const String resendEmail = 'Resend email';
   static const String setANewPassword = 'Set a new password';
@@ -127,6 +128,7 @@ class AppStrings {
   static const String manager = "Manager";
   static const String addedReceipt = "Added Receipt";
   static const String recently = "Recently";
+  static const String recent = "Recent";
   static const String total = "Total";
 
   ///====================== Report ========================
@@ -142,4 +144,5 @@ class AppStrings {
   static const pricingInfo = 'pricing_info';
   static const freeTrialFor = 'Free Trial For';
   static const sevenDays = '7days';
+  static const all = 'All';
 }

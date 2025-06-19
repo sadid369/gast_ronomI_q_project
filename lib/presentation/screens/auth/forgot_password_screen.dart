@@ -32,6 +32,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void initState() {
     super.initState();
     // show/hide loader
+    _onEmailChanged(_authController.emailController.value.text);
   }
 
 // sadid.jones@gmail.com
@@ -53,6 +54,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       context: context,
       email: _emailController.text.trim(),
     );
+    // context.push(RoutePath.verification.addBasePath);
   }
 
   @override

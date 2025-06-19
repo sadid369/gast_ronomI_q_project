@@ -8,5 +8,5 @@ class ApiUrl {
       "/subscriptions_plan/api/v1/subscription/plans/";
 
   static const signUpClient = "/user/api/v1/register/";
-  static const signInClient = "/djoser/auth/jwt/create/";
+  static const signInClient = "/user/api/v1/user/login/";
 }

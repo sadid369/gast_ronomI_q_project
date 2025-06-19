@@ -22,9 +22,9 @@ class AuthController extends GetxController {
       TextEditingController(text: kDebugMode ? "sadid.jones@gmail.com" : "")
           .obs;
   Rx<TextEditingController> passController =
-      TextEditingController(text: kDebugMode ? "1234567Rr" : "").obs;
+      TextEditingController(text: kDebugMode ? "123456Er" : "").obs;
   Rx<TextEditingController> confirmController =
-      TextEditingController(text: kDebugMode ? "1234567Rr" : "").obs;
+      TextEditingController(text: kDebugMode ? "123456Er" : "").obs;
 
   Rx<TextEditingController> otpController = TextEditingController().obs;
 
@@ -63,16 +63,21 @@ class AuthController extends GetxController {
         isBasic: true,
         url: ApiUrl.signInClient.addBaseUrl);
 
-    // // Ensure the widget is still mounted before using BuildContext
-    // if (!context.mounted) return;
-
-    // if (response.statusCode == 200) {
-    //   saveInformation(response: response);
-    //   if (response.body["data"]["role"] == AppConstants.admin) {
-    //   } else {
-    //     AppRouter.route.replaceNamed(RoutePath.workerHome);
-    //   }
     if (response.statusCode == 200) {
+      // save desired fields
+      await SharedPrefsHelper.setString(
+          AppConstants.fullName, response.body["full_name"] ?? "");
+      await SharedPrefsHelper.setString(
+          AppConstants.email, response.body["email"] ?? "");
+      await SharedPrefsHelper.setString(
+          AppConstants.image, response.body["image"]?.toString() ?? "");
+      await SharedPrefsHelper.setString(
+          AppConstants.token, response.body["access"] ?? "");
+      await SharedPrefsHelper.setString(
+          AppConstants.userRole, response.body["role"] ?? "");
+      await SharedPrefsHelper.setString(
+          AppConstants.refresh, response.body["refresh"] ?? "");
+
       AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
     } else {
       // ignore: use_build_context_synchronously
@@ -134,81 +139,6 @@ class AuthController extends GetxController {
   /// ====================== signUpOtpVarify ========================
   RxBool verifyLoading = false.obs;
 
-  // signUpOtpVerify({required BuildContext context}) async {
-  //   verifyLoading.value = true;
-  //   var body = {
-  //     "email": emailController.value.text,
-  //     "activation_code": otpController.value.text
-  //   };
-
-  //   var response = await apiClient.patch(
-  //       body: body,
-  //       isBasic: true,
-  //       showResult: true,
-  //       url: isClient.value
-  //           ? ApiUrl.activeClient.addBaseUrl
-  //           : ApiUrl.activeWorker.addBaseUrl);
-
-  //   if (response.statusCode == 201) {
-  //     timer.cancel();
-  //     showSnackBar(
-  //         // ignore: use_build_context_synchronously
-  //         context: context,
-  //         content: response.body["message"],
-  //         backgroundColor: Colors.green);
-
-  //     AppRouter.route.pushReplacementNamed(
-  //       RoutePath.login,
-  //     );
-  //   } else {
-  //     // ignore: use_build_context_synchronously
-  //     checkApi(response: response, context: context);
-  //   }
-
-  //   verifyLoading.value = false;
-  // }
-
-  // ======================== Timer ====================
-
-  // RxInt secondsRemaining = 60.obs;
-  // late Timer timer;
-
-  // void startTimer() {
-  //   debugPrint("resend OTP Timer -------->>>>>>>>> $secondsRemaining");
-  //   timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-  //     if (secondsRemaining.value > 0) {
-  //       secondsRemaining.value--;
-  //       secondsRemaining.refresh();
-  //       debugPrint("resend OTP Timer -------->>>>>>>>> $secondsRemaining");
-  //     } else {
-  //       timer.cancel();
-  //     }
-  //   });
-  // }
-
-  /// ===================== Resent OTP ======================
-
-  // Future<bool> resendOTP() async {
-  //   var body = {"email": emailController.value.text};
-
-  //   var response = await apiClient.patch(
-  //       isBasic: true,
-  //       body: body,
-  //       url: isClient.value
-  //           ? ApiUrl.resendOTpClient.addBaseUrl
-  //           : ApiUrl.resendOTpWorker.addBaseUrl);
-
-  //   if (response.statusCode == 200) {
-  //     secondsRemaining.value = 60;
-  //     secondsRemaining.refresh();
-  //     startTimer();
-
-  //     return true;
-  //   } else {
-  //     return false;
-  //   }
-  // }
-  /// ====================== Send Reset OTP =======================
   RxBool resetOtpLoading = false.obs;
 
   Future<void> sendResetOtp({
@@ -242,30 +172,75 @@ class AuthController extends GetxController {
     required String otp,
   }) async {
     verifyResetOtpLoading.value = true;
-
-    final body = {
-      "email": email,
-      "otp": otp,
-    };
-
+    final body = {"email": email, "otp": otp};
     final response = await apiClient.post(
       showResult: true,
       body: body,
       isBasic: true,
       url: "http://10.0.70.145:8001/user/api/v1/verify-reset-otp/",
     );
-
     verifyResetOtpLoading.value = false;
 
     if (response.statusCode == 200) {
       final resetToken = response.body["reset_token"];
-      // pass resetToken (and maybe email) to the next screen
-      context.push(
-        RoutePath.resetPassConfirm.addBasePath,
-        extra: {"resetToken": resetToken, "email": email},
-      );
+      // save token in shared prefs
+      await SharedPrefsHelper.setString(AppConstants.resetToken, resetToken);
+      // navigate without passing extra
+      context.push(RoutePath.resetPassConfirm.addBasePath);
     } else {
       checkApi(response: response, context: context);
     }
+  }
+
+  RxBool setNewPasswordLoading = false.obs;
+
+  Future<void> setNewPasswordAfterOtp({
+    required BuildContext context,
+    required String resetToken,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    setNewPasswordLoading.value = true;
+    final body = {
+      "reset_token": resetToken,
+      "new_password": newPassword,
+      "confirm_password": confirmPassword,
+    };
+
+    final response = await apiClient.post(
+      showResult: true,
+      body: body,
+      isBasic: true,
+      url: "http://10.0.70.145:8001/user/api/v1/set-new-password-after-otp/",
+    );
+
+    setNewPasswordLoading.value = false;
+
+    if (response.statusCode == 200) {
+      // clear the stored reset token
+      await SharedPrefsHelper.remove(AppConstants.resetToken);
+      // Show success and navigate to success screen
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text(response.body["message"] ?? "Password reset successful")),
+      );
+      context.push(RoutePath.resetPasswordSuccess.addBasePath);
+    } else {
+      checkApi(response: response, context: context);
+    }
+  }
+
+  Future<void> logout({required BuildContext context}) async {
+    // clear saved user data
+    await SharedPrefsHelper.remove(AppConstants.token);
+    await SharedPrefsHelper.remove(AppConstants.userRole);
+    await SharedPrefsHelper.remove(AppConstants.fullName);
+    await SharedPrefsHelper.remove(AppConstants.email);
+    await SharedPrefsHelper.remove(AppConstants.image);
+    await SharedPrefsHelper.remove(AppConstants.refresh);
+
+    // navigate to login (replace the entire stack)
+    AppRouter.route.pushReplacement(RoutePath.login.addBasePath);
   }
 }

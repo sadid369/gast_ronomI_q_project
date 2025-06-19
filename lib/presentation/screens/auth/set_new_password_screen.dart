@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
-import 'package:get/get.dart'; // for `.tr`
+import 'package:get/get.dart';
+import 'controller/auth_controller.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
+import 'package:groc_shopy/helper/local_db/local_db.dart';
 import 'package:groc_shopy/utils/app_colors/app_colors.dart';
+import 'package:groc_shopy/utils/app_const/app_const.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
 import '../../../core/custom_assets/assets.gen.dart';
 import '../../../core/routes/route_path.dart';
@@ -13,8 +16,6 @@ import '../../widgets/custom_bottons/custom_button/app_button.dart';
 import '../../widgets/custom_text_form_field/custom_text_form.dart';
 
 class SetPasswordScreen extends StatefulWidget {
-  const SetPasswordScreen({super.key});
-
   @override
   State<SetPasswordScreen> createState() => _SetPasswordScreenState();
 }
@@ -22,8 +23,21 @@ class SetPasswordScreen extends StatefulWidget {
 class _SetPasswordScreenState extends State<SetPasswordScreen> {
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final authController = Get.find<AuthController>();
+
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+
+  String _resetToken = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // fetch saved resetToken
+    SharedPrefsHelper.getString(AppConstants.resetToken).then((t) {
+      setState(() => _resetToken = t);
+    });
+  }
 
   @override
   void dispose() {
@@ -35,35 +49,6 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
   void _togglePassword() =>
       setState(() => _obscurePassword = !_obscurePassword);
   void _toggleConfirm() => setState(() => _obscureConfirm = !_obscureConfirm);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildBackButton(),
-                Gap(53.h),
-                _buildTitle(),
-                Gap(18.h),
-                _buildSubtitle(),
-                Gap(44.h),
-                _buildPasswordField(),
-                Gap(16.h),
-                _buildConfirmField(),
-                Gap(30.h),
-                _buildUpdateButton(context),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildBackButton() => GestureDetector(
         onTap: () => context.pop(),
@@ -133,13 +118,63 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
         ],
       );
 
-  Widget _buildUpdateButton(BuildContext ctx) => AppButton(
-        text: AppStrings.updatePassword.tr,
-        onPressed: () => ctx.push(RoutePath.resetPasswordSuccess.addBasePath),
-        width: double.infinity,
-        height: 48.h,
-        backgroundColor: const Color(0xFFF7C95C),
-        borderRadius: 8,
-        textStyle: AppStyle.inter16w700CFFFFFF,
-      );
+  Widget _buildUpdateButton(BuildContext ctx) => Obx(() {
+        // if loading, show spinner instead of button
+        if (authController.setNewPasswordLoading.value) {
+          return SizedBox(
+            width: double.infinity,
+            height: 48.h,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        }
+
+        // otherwise normal button
+        return AppButton(
+          text: AppStrings.updatePassword.tr,
+          onPressed: () {
+            authController.setNewPasswordAfterOtp(
+              context: ctx,
+              resetToken: _resetToken,
+              newPassword: _passwordController.text,
+              confirmPassword: _confirmController.text,
+            );
+          },
+          width: double.infinity,
+          height: 48.h,
+          backgroundColor: const Color(0xFFF7C95C),
+          borderRadius: 8,
+          textStyle: AppStyle.inter16w700CFFFFFF,
+        );
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildBackButton(),
+                Gap(53.h),
+                _buildTitle(),
+                Gap(18.h),
+                _buildSubtitle(),
+                Gap(44.h),
+                _buildPasswordField(),
+                Gap(16.h),
+                _buildConfirmField(),
+                Gap(30.h),
+                _buildUpdateButton(context),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

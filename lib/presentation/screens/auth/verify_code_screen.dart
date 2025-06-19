@@ -69,6 +69,9 @@ class _CodeVerificationScreenState extends State<CodeVerificationScreen> {
       email: email,
       otp: code,
     );
+    // context.push(
+    //   RoutePath.resetPassConfirm.addBasePath,
+    // );7
   }
 
   @override
