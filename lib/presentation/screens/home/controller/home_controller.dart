@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:groc_shopy/helper/extension/base_extension.dart';
 import '../../../../global/language/controller/language_controller.dart';
 import '../../../../service/api_service.dart';
 import '../../../../dependency_injection/path.dart';
+import '../../../../service/api_url.dart';
 import '../home_screen.dart';
 
 class HomeController extends GetxController {
@@ -26,7 +28,8 @@ class HomeController extends GetxController {
     loading.value = true;
     try {
       final resp = await _apiClient.get(
-        url: 'http://10.0.70.145:8001/report/orders/recent/',
+        url: ApiUrl.lastScanInvoiceItems.addBaseUrl,
+        // url: 'http://10.0.70.145:8001/report/orders/recent/',
         showResult: true,
       );
       if (resp.statusCode == 200) {

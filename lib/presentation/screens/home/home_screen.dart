@@ -8,9 +8,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get/get.dart';
+import '../profile/controller/profile_controller.dart';
 import '../../../core/custom_assets/assets.gen.dart';
 import '../../../core/routes/route_path.dart';
+import '../../../helper/local_db/local_db.dart';
 import '../../../utils/app_colors/app_colors.dart';
+import '../../../utils/app_const/app_const.dart';
 import '../../../utils/static_strings/static_strings.dart';
 import '../../../utils/text_style/text_style.dart';
 import '../../widgets/purchase_card/purchase_card.dart';
@@ -65,11 +68,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final HomeController ctrl = Get.find<HomeController>();
-
+  final ProfileController profileCtrl = Get.find<ProfileController>();
+  String? _profileImageUrl;
   @override
   void initState() {
     super.initState();
+    _loadProfileImage();
     _showSubscriptionModal();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final url = await SharedPrefsHelper.getString(AppConstants.image);
+    setState(() {
+      _profileImageUrl =
+          url?.addBaseUrl; // Use your addBaseUrl extension if needed
+    });
   }
 
   void _showSubscriptionModal() {
@@ -123,11 +136,14 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Row(
           children: [
-            CircleAvatar(
-              radius: 30.r,
-              backgroundImage: const NetworkImage(
-                  'https://randomuser.me/api/portraits/men/32.jpg'),
-            ),
+            Obx(() => CircleAvatar(
+                  radius: 30.r,
+                  backgroundImage: profileCtrl.profileImageUrl.value.isNotEmpty
+                      ? NetworkImage(profileCtrl.profileImageUrl.value)
+                      : AssetImage(Assets.images.profileImage
+                              .path) // Use a default image if no profile image is set
+                          as ImageProvider,
+                )),
             Gap(12.w),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,10 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
-import 'package:groc_shopy/core/custom_assets/assets.gen.dart';
 import 'package:groc_shopy/utils/app_colors/app_colors.dart';
 import 'package:groc_shopy/utils/static_strings/static_strings.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
@@ -23,7 +20,9 @@ class TransactionHistoryScreen extends StatelessWidget {
         return const Center(child: CircularProgressIndicator());
       }
       if (controller.errorMessage.value != null) {
-        return Center(child: Text('Error: ${controller.errorMessage.value}'));
+        return Center(
+          child: Text('Error: ${controller.errorMessage.value}'),
+        );
       }
       final history = controller.history.value!;
       return SafeArea(

@@ -19,6 +19,7 @@ import '../../../service/payment_service.dart';
 import '../../widgets/custom_bottons/custom_button/app_button.dart';
 import '../../widgets/custom_navbar/navbar_controller.dart';
 import '../../widgets/subscription_plans/subscription_plans.dart';
+import '../auth/controller/auth_controller.dart';
 import 'controller/profile_controller.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -26,6 +27,20 @@ class ProfileScreen extends StatelessWidget {
 
   final BottomNavController controller = Get.find<BottomNavController>();
   final ProfileController profileCtrl = Get.put(ProfileController());
+  final AuthController _authController = Get.find<AuthController>();
+  // Add a ScrollController for pagination
+  final ScrollController _allTabScrollController = ScrollController();
+
+  void _setupScrollListener(BuildContext context) {
+    _allTabScrollController.addListener(() {
+      if (_allTabScrollController.position.pixels >=
+              _allTabScrollController.position.maxScrollExtent - 100 &&
+          profileCtrl.isTotal.value &&
+          !profileCtrl.isLoadingOrders.value) {
+        profileCtrl.fetchNextPage();
+      }
+    });
+  }
 
   Future<void> _showPickOptionsDialog(BuildContext context) async {
     showModalBottomSheet(
@@ -134,8 +149,24 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showFullImage(BuildContext context, File? imageFile) {
-    if (imageFile == null) return;
+  // void _showFullImage(BuildContext context, File? imageFile) {
+  //   if (imageFile == null) return;
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => GestureDetector(
+  //       onTap: () => Navigator.of(context).pop(),
+  //       child: Container(
+  //         color: Colors.black.withOpacity(0.9),
+  //         alignment: Alignment.center,
+  //         child: InteractiveViewer(
+  //           child: Image.file(imageFile),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+  void _showFullImage(
+      BuildContext context, File? imageFile, String? networkImageUrl) {
     showDialog(
       context: context,
       builder: (context) => GestureDetector(
@@ -144,7 +175,27 @@ class ProfileScreen extends StatelessWidget {
           color: Colors.black.withOpacity(0.9),
           alignment: Alignment.center,
           child: InteractiveViewer(
-            child: Image.file(imageFile),
+            child: imageFile != null
+                ? Image.file(imageFile)
+                : (networkImageUrl != null && networkImageUrl.isNotEmpty
+                    ? Image.network(networkImageUrl)
+                    : Image.asset(Assets.images.profileImage.path)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showInvoiceImage(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => GestureDetector(
+        onTap: () => Navigator.of(context).pop(),
+        child: Container(
+          color: Colors.black.withOpacity(0.9),
+          alignment: Alignment.center,
+          child: InteractiveViewer(
+            child: Image.network(imageUrl),
           ),
         ),
       ),
@@ -153,6 +204,7 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    _setupScrollListener(context);
     return Scaffold(
       body: SafeArea(
         child: Obx(() => Column(
@@ -172,7 +224,7 @@ class ProfileScreen extends StatelessWidget {
                       InkWell(
                         onTap: () {
                           controller.changeIndex(0);
-                          context.pushReplacement(RoutePath.auth.addBasePath);
+                          _authController.logout(context: context);
                         },
                         child: Icon(
                           Icons.logout,
@@ -201,62 +253,72 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     Positioned(
                       top: 55.h,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: () {
-                          _showPickOptionsDialog(context);
-                        },
-                        onLongPress: () {
-                          _showFullImage(
-                              context, profileCtrl.profileImageFile.value);
-                        },
-                        child: Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 36.r,
-                              backgroundColor: Colors.white,
-                              child: CircleAvatar(
-                                radius: 32.r,
-                                backgroundImage:
-                                    profileCtrl.profileImageFile.value != null
+                      child: Obx(() => GestureDetector(
+                            // behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              _showPickOptionsDialog(context);
+                            },
+                            onLongPress: () {
+                              _showFullImage(
+                                context,
+                                profileCtrl.profileImageFile.value,
+                                profileCtrl.profileImageUrl.value,
+                              );
+                            },
+                            child: Stack(
+                              children: [
+                                CircleAvatar(
+                                  radius: 36.r,
+                                  backgroundColor: Colors.white,
+                                  child: CircleAvatar(
+                                    radius: 32.r,
+                                    backgroundImage: profileCtrl
+                                                .profileImageFile.value !=
+                                            null
                                         ? FileImage(
                                             profileCtrl.profileImageFile.value!)
-                                        : AssetImage(
-                                                Assets.images.profileImage.path)
-                                            as ImageProvider,
-                              ),
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Container(
-                                width: 20.w,
-                                height: 20.w,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: Colors.grey.shade300, width: 1),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.camera_alt,
-                                    size: 15.w,
-                                    color: Colors.black54,
+                                        : (profileCtrl.profileImageUrl.value
+                                                .isNotEmpty
+                                            ? NetworkImage(profileCtrl
+                                                .profileImageUrl.value)
+                                            : AssetImage(Assets
+                                                .images
+                                                .profileImage
+                                                .path)) as ImageProvider,
                                   ),
                                 ),
-                              ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    width: 20.w,
+                                    height: 20.w,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: Colors.grey.shade300,
+                                          width: 1),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.camera_alt,
+                                        size: 15.w,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          )),
                     ),
                   ],
                 ),
@@ -302,20 +364,36 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
                 Expanded(
-                  child: profileCtrl.isLoadingOrders.value
+                  child: profileCtrl.isLoadingOrders.value &&
+                          profileCtrl.userOrders.isEmpty
                       ? Center(child: CircularProgressIndicator())
                       : profileCtrl.userOrders.isEmpty
                           ? Center(child: Text('No orders found'))
                           : ListView.builder(
+                              controller: profileCtrl.isTotal.value
+                                  ? _allTabScrollController
+                                  : null,
                               padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              itemCount: profileCtrl.isTotal.value
-                                  ? profileCtrl.userOrders.length
-                                  : (profileCtrl.userOrders.length >= 3
-                                      ? 3
-                                      : profileCtrl.userOrders.length),
+                              itemCount: profileCtrl.userOrders.length +
+                                  (profileCtrl.isTotal.value &&
+                                          profileCtrl.isLoadingOrders.value
+                                      ? 1
+                                      : 0),
                               itemBuilder: (_, i) {
-                                return receiptItemFromOrder(
-                                    profileCtrl.userOrders[i]);
+                                if (i < profileCtrl.userOrders.length) {
+                                  return receiptItemFromOrder(
+                                    profileCtrl.userOrders[i],
+                                    () => _showInvoiceImage(context,
+                                        profileCtrl.userOrders[i].image),
+                                  );
+                                } else {
+                                  // Show loading indicator at the end
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 16),
+                                    child: Center(
+                                        child: CircularProgressIndicator()),
+                                  );
+                                }
                               },
                             ),
                 ),
@@ -360,7 +438,7 @@ Widget _buildRoleTab(String title, bool selected, VoidCallback onTap) {
   );
 }
 
-Widget receiptItemFromOrder(Order order) {
+Widget receiptItemFromOrder(Order order, void Function() onImageTap) {
   return Container(
     margin: EdgeInsets.symmetric(vertical: 8.h),
     decoration: BoxDecoration(
@@ -368,8 +446,11 @@ Widget receiptItemFromOrder(Order order) {
     ),
     child: Row(
       children: [
-        Image.network(order.image,
-            width: 70.w, height: 70.h, fit: BoxFit.cover),
+        GestureDetector(
+          onTap: onImageTap,
+          child: Image.network(order.image,
+              width: 70.w, height: 70.h, fit: BoxFit.cover),
+        ),
         Gap(10.w),
         Expanded(
           child: Column(

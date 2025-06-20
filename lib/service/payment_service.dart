@@ -6,6 +6,7 @@ import 'package:get_it/get_it.dart'; // Import GetIt for dependency resolution
 import 'package:go_router/go_router.dart';
 import 'package:groc_shopy/global/model/subscription_plan.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
+import 'package:groc_shopy/utils/static_strings/static_strings.dart';
 
 import '../core/routes/route_path.dart';
 import 'api_service.dart';
@@ -13,11 +14,11 @@ import 'api_url.dart'; // Import ApiClient from your network module
 
 class PaymentService {
   // Use ApiUrl class for dynamic URL construction
-  static const String _baseUrl = ApiUrl.baseUrl;
-  static const String _createPaymentIntentEndpoint = ApiUrl
-      .confirmSubscription; // Adjust this to your endpoint for payment intent creation
-  static const String _subscriptionPlansEndpoint =
-      ApiUrl.subscriptionPackages; // Adjust this to the appropriate endpoint
+  // static const String _baseUrl = ApiUrl.baseUrl;
+  // static const String _createPaymentIntentEndpoint = ApiUrl
+  //     .confirmSubscription; // Adjust this to your endpoint for payment intent creation
+  // static const String _subscriptionPlansEndpoint =
+  //     ApiUrl.subscriptionPackages; // Adjust this to the appropriate endpoint
 
   // Fetch available subscription plans using ApiClient
   static Future<List<SubscriptionPlan>> getSubscriptionPlans() async {
@@ -26,7 +27,8 @@ class PaymentService {
       final apiClient = GetIt.instance<ApiClient>();
 
       final response = await apiClient.get(
-        url: '$_baseUrl$_subscriptionPlansEndpoint',
+        // url: '$_baseUrl$_subscriptionPlansEndpoint',
+        url: ApiUrl.subscriptionPackages.addBaseUrl,
         isBasic: true, // Adjust based on your API's authentication method
       );
 
@@ -49,7 +51,8 @@ class PaymentService {
       final apiClient = GetIt.instance<ApiClient>();
 
       final response = await apiClient.post(
-        url: '$_baseUrl$_createPaymentIntentEndpoint',
+        // url: '$_baseUrl$_createPaymentIntentEndpoint',
+        url: ApiUrl.confirmSubscription.addBaseUrl,
         body: {'plan_id': planId},
         // context: null, // Provide the context if needed for error handling
       );
@@ -73,7 +76,7 @@ class PaymentService {
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: 'GrocShopy',
+          merchantDisplayName: AppStrings.appName,
           style: ThemeMode.system,
           appearance: PaymentSheetAppearance(
             colors: PaymentSheetAppearanceColors(

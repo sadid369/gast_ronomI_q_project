@@ -58,10 +58,11 @@ class AuthController extends GetxController {
       "password": passController.value.text
     };
     var response = await apiClient.post(
-        showResult: true,
-        body: body,
-        isBasic: true,
-        url: ApiUrl.signInClient.addBaseUrl);
+      showResult: true,
+      body: body,
+      isBasic: true,
+      url: ApiUrl.signInClient.addBaseUrl,
+    );
 
     if (response.statusCode == 200) {
       // save desired fields
@@ -77,7 +78,8 @@ class AuthController extends GetxController {
           AppConstants.userRole, response.body["role"] ?? "");
       await SharedPrefsHelper.setString(
           AppConstants.refresh, response.body["refresh"] ?? "");
-
+      await SharedPrefsHelper.setInt(
+          AppConstants.userID, response.body["id"] ?? 0);
       AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
     } else {
       // ignore: use_build_context_synchronously
@@ -152,7 +154,8 @@ class AuthController extends GetxController {
       body: body,
       isBasic: true,
       // url: '/user/api/v1/send-reset-otp/'.addBaseUrl,
-      url: "http://10.0.70.145:8001/user/api/v1/send-reset-otp/",
+      url: ApiUrl.sendResetOtp.addBaseUrl,
+      // url: "http://10.0.70.145:8001/user/api/v1/send-reset-otp/",
     );
     resetOtpLoading.value = false;
 
@@ -177,7 +180,8 @@ class AuthController extends GetxController {
       showResult: true,
       body: body,
       isBasic: true,
-      url: "http://10.0.70.145:8001/user/api/v1/verify-reset-otp/",
+      url: ApiUrl.verifyResetOtp.addBaseUrl,
+      // url: "http://10.0.70.145:8001/user/api/v1/verify-reset-otp/",
     );
     verifyResetOtpLoading.value = false;
 
@@ -211,7 +215,8 @@ class AuthController extends GetxController {
       showResult: true,
       body: body,
       isBasic: true,
-      url: "http://10.0.70.145:8001/user/api/v1/set-new-password-after-otp/",
+      url: ApiUrl.setNewPasswordAfterOtp.addBaseUrl,
+      // url: "http://10.0.70.145:8001/user/api/v1/set-new-password-after-otp/",
     );
 
     setNewPasswordLoading.value = false;
@@ -232,15 +237,41 @@ class AuthController extends GetxController {
   }
 
   Future<void> logout({required BuildContext context}) async {
-    // clear saved user data
+    // Get tokens from shared preferences
+    final refreshToken =
+        await SharedPrefsHelper.getString(AppConstants.refresh);
+
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      // Call the logout API
+      final response = await apiClient.post(
+        url: "http://10.0.70.145:8001/user/logout/",
+        body: {"refresh": refreshToken},
+        isBasic: false,
+        showResult: true,
+      );
+
+      if (response.statusCode == 205) {
+        // Optionally show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(response.body["detail"] ?? "Logout successful.")),
+        );
+      } else {
+        // Optionally handle error
+        checkApi(response: response, context: context);
+      }
+    }
+
+    // Clear saved user data
     await SharedPrefsHelper.remove(AppConstants.token);
     await SharedPrefsHelper.remove(AppConstants.userRole);
     await SharedPrefsHelper.remove(AppConstants.fullName);
     await SharedPrefsHelper.remove(AppConstants.email);
     await SharedPrefsHelper.remove(AppConstants.image);
     await SharedPrefsHelper.remove(AppConstants.refresh);
+    await SharedPrefsHelper.remove(AppConstants.userID);
 
-    // navigate to login (replace the entire stack)
-    AppRouter.route.pushReplacement(RoutePath.login.addBasePath);
+    // Navigate to login (replace the entire stack)
+    context.pushReplacement(RoutePath.auth.addBasePath);
   }
 }

@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:groc_shopy/helper/extension/base_extension.dart';
+import 'package:groc_shopy/service/api_url.dart';
 import '../../../../service/api_service.dart';
 import '../../../../dependency_injection/path.dart';
 
@@ -35,7 +37,7 @@ class ScannedItemsController extends ChangeNotifier {
   bool isLoading = true;
   String errorMessage = '';
 
-  final String _receiptUrl = 'http://10.0.70.145:8001/report/orders/recent/';
+  // final String _receiptUrl = 'http://10.0.70.145:8001/report/orders/recent/';
 
   Future<void> fetchReceiptAndItems() async {
     isLoading = true;
@@ -44,7 +46,8 @@ class ScannedItemsController extends ChangeNotifier {
 
     try {
       final resp = await _apiClient.get(
-        url: _receiptUrl,
+        // url: _receiptUrl,
+        url: ApiUrl.lastScanInvoiceItems.addBaseUrl,
         showResult: true,
       );
 

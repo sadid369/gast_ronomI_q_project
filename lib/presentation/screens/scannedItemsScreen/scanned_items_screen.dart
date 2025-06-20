@@ -12,6 +12,7 @@ import '../../../utils/static_strings/static_strings.dart';
 import '../../../utils/text_style/text_style.dart';
 import '../../widgets/custom_navbar/navbar_controller.dart';
 import '../home/controller/home_controller.dart';
+import '../profile/controller/profile_controller.dart';
 import '../transaction_history/controller/transaction_history_controller.dart';
 import 'controller/scanned_items_controller.dart';
 
@@ -28,6 +29,7 @@ class _ScannedItemsScreenState extends State<ScannedItemsScreen> {
   final BottomNavController controller = Get.find<BottomNavController>();
   final HomeController ctrl = Get.find<HomeController>();
   final transController = Get.find<TransactionHistoryController>();
+  final profile = Get.find<ProfileController>();
 
   late final ScannedItemsController scannedItemsController;
 
@@ -38,6 +40,7 @@ class _ScannedItemsScreenState extends State<ScannedItemsScreen> {
     scannedItemsController.fetchReceiptAndItems().then((_) async {
       await ctrl.fetchRecentOrders();
       await transController.fetchHistory();
+      await profile.fetchOrders();
     });
   }
 

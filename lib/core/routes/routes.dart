@@ -56,16 +56,16 @@ class AppRouter {
           transitionsBuilder: _fadeTransition,
         ),
       ),
-      GoRoute(
-        name: RoutePath.stripe,
-        path: RoutePath.stripe.addBasePath,
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (ctx, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: StripePaymentScreen(),
-          transitionsBuilder: _fadeTransition,
-        ),
-      ),
+      // GoRoute(
+      //   name: RoutePath.stripe,
+      //   path: RoutePath.stripe.addBasePath,
+      //   parentNavigatorKey: _rootNavigatorKey,
+      //   pageBuilder: (ctx, state) => CustomTransitionPage(
+      //     key: state.pageKey,
+      //     child: StripePaymentScreen(),
+      //     transitionsBuilder: _fadeTransition,
+      //   ),
+      // ),
 
       GoRoute(
         name: RoutePath.auth,

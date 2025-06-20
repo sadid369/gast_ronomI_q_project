@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:groc_shopy/helper/extension/base_extension.dart';
+import 'package:groc_shopy/service/api_url.dart';
 import '../../../../global/model/transaction_history.dart';
 import '../../../../service/api_service.dart';
 import '../../../../dependency_injection/path.dart';
@@ -23,7 +25,7 @@ class TransactionHistoryController extends GetxController {
 
     try {
       final resp = await _apiClient.get(
-        url: 'http://10.0.70.145:8001/report/api/v1/daily-category-spending/',
+        url: ApiUrl.transaction.addBaseUrl,
         showResult: true,
       );
 

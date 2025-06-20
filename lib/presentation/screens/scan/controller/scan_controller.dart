@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../service/api_service.dart';
 import '../../../../dependency_injection/path.dart';
 import '../../../../core/routes/route_path.dart';
+import '../../../../service/api_url.dart';
 
 class ScanController extends ChangeNotifier {
   final ApiClient _apiClient = serviceLocator();
@@ -13,8 +15,8 @@ class ScanController extends ChangeNotifier {
   bool isLoading = false;
 
   final ImagePicker _picker = ImagePicker();
-  final String _scanReceiptUrl =
-      'http://10.0.70.145:8001/receipt/scan-receipt/';
+  // final String _scanReceiptUrl =
+  //     'http://10.0.70.145:8001/receipt/scan-receipt/';
 
   Future<void> pickImage(BuildContext context) async {
     final file = await _picker.pickImage(source: ImageSource.gallery);
@@ -33,7 +35,8 @@ class ScanController extends ChangeNotifier {
 
     try {
       final resp = await _apiClient.multipartRequest(
-        url: _scanReceiptUrl,
+        // url: _scanReceiptUrl,
+        url: ApiUrl.scanReceipt.addBaseUrl,
         reqType: 'POST',
         multipartBody: [MultipartBody('receipt', imageFile)],
       );

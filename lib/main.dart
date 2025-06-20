@@ -39,23 +39,24 @@ class MyApp extends StatelessWidget {
       //
       designSize: const Size(393, 852),
       builder: (_, __) {
-        return Obx(() => GetMaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              title: AppStrings.appName,
-              theme: ThemeData(
-                scaffoldBackgroundColor: AppColors.backgroundColor,
-                useMaterial3: true,
-              ),
-              translations: Language(), // your translations class
-              locale: languageController.isEnglish.value
-                  ? const Locale('en', 'US')
-                  : const Locale('de', 'DE'),
-              fallbackLocale: const Locale('en', 'US'),
-              routeInformationParser: AppRouter.route.routeInformationParser,
-              routerDelegate: AppRouter.route.routerDelegate,
-              routeInformationProvider:
-                  AppRouter.route.routeInformationProvider,
-            ));
+        return Obx(
+          () => GetMaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            title: AppStrings.appName,
+            theme: ThemeData(
+              scaffoldBackgroundColor: AppColors.backgroundColor,
+              useMaterial3: true,
+            ),
+            translations: Language(), // your translations class
+            locale: languageController.isEnglish.value
+                ? const Locale('en', 'US')
+                : const Locale('de', 'DE'),
+            fallbackLocale: const Locale('en', 'US'),
+            routeInformationParser: AppRouter.route.routeInformationParser,
+            routerDelegate: AppRouter.route.routerDelegate,
+            routeInformationProvider: AppRouter.route.routeInformationProvider,
+          ),
+        );
       },
     );
   }
