@@ -1,6 +1,6 @@
 class ApiUrl {
   static const baseUrl = "http://10.0.70.145:8001"; // LOCAL
-  static const imageBaseUrl = '$baseUrl/';
+  static const imageBaseUrl = '$baseUrl';
 
   static const confirmSubscription =
       "/subscription/api/v1/create-payment-intent/";

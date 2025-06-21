@@ -149,22 +149,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // void _showFullImage(BuildContext context, File? imageFile) {
-  //   if (imageFile == null) return;
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => GestureDetector(
-  //       onTap: () => Navigator.of(context).pop(),
-  //       child: Container(
-  //         color: Colors.black.withOpacity(0.9),
-  //         alignment: Alignment.center,
-  //         child: InteractiveViewer(
-  //           child: Image.file(imageFile),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
   void _showFullImage(
       BuildContext context, File? imageFile, String? networkImageUrl) {
     showDialog(
@@ -322,14 +306,14 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                Gap(40.h),
+                Gap(50.h),
                 Text(
-                  'Alex Thomson',
+                  profileCtrl.name.value,
                   style: AppStyle.kohSantepheap16w700C3F3F3F,
                 ),
                 Gap(4.h),
                 Text(
-                  'Manager',
+                  profileCtrl.role.value,
                   style: AppStyle.roboto12w400C80000000,
                 ),
                 Gap(2.h),
@@ -338,6 +322,16 @@ class ProfileScreen extends StatelessWidget {
                   style: AppStyle.robotoSerif12w500C000000,
                 ),
                 Gap(12.h),
+                // Align(
+                //   alignment: Alignment.center,
+                //   child: Text(
+                //     AppStrings.addedReceipt.tr,
+                //     style: AppStyle.kohSantepheap16w700C000000,
+                //   ),
+                // ),
+                // Gap(21.h),
+                UpgradeBanner(),
+                Gap(21.h),
                 Align(
                   alignment: Alignment.center,
                   child: Text(
@@ -345,8 +339,6 @@ class ProfileScreen extends StatelessWidget {
                     style: AppStyle.kohSantepheap16w700C000000,
                   ),
                 ),
-                Gap(21.h),
-                UpgradeBanner(),
                 Gap(21.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

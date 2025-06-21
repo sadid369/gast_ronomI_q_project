@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:http/http.dart' as http;
 import 'package:auto_size_text/auto_size_text.dart';
@@ -8,6 +9,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get/get.dart';
+import '../../../service/payment_service.dart';
+import '../../widgets/subscription_plans/subscription_plans.dart';
 import '../profile/controller/profile_controller.dart';
 import '../../../core/custom_assets/assets.gen.dart';
 import '../../../core/routes/route_path.dart';
@@ -19,6 +22,7 @@ import '../../../utils/text_style/text_style.dart';
 import '../../widgets/purchase_card/purchase_card.dart';
 import '../../widgets/purchase_history_item/purchase_history_item.dart';
 import '../../widgets/subscription_modal/subscription_modal.dart';
+import '../transaction_history/controller/transaction_history_controller.dart';
 import 'controller/home_controller.dart';
 
 class RecentOrder {
@@ -69,7 +73,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final HomeController ctrl = Get.find<HomeController>();
   final ProfileController profileCtrl = Get.find<ProfileController>();
+  final transCtrl = Get.find<TransactionHistoryController>();
   String? _profileImageUrl;
+  String _name = '';
   @override
   void initState() {
     super.initState();
@@ -79,9 +85,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadProfileImage() async {
     final url = await SharedPrefsHelper.getString(AppConstants.image);
+    final name = await SharedPrefsHelper.getString(AppConstants.fullName);
     setState(() {
       _profileImageUrl =
-          url?.addBaseUrl; // Use your addBaseUrl extension if needed
+          url.addBaseUrl; // Use your addBaseUrl extension if needed
+      _name = name;
     });
   }
 
@@ -90,7 +98,12 @@ class _HomeScreenState extends State<HomeScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const SubscriptionModal(),
+        builder: (context) => SubscriptionModal(
+          onSubscribe: () {
+            Navigator.of(context).pop(); // Close modal
+            _showSubscriptionPlansAndPay();
+          },
+        ),
       );
     });
   }
@@ -136,21 +149,23 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Row(
           children: [
-            Obx(() => CircleAvatar(
-                  radius: 30.r,
-                  backgroundImage: profileCtrl.profileImageUrl.value.isNotEmpty
-                      ? NetworkImage(profileCtrl.profileImageUrl.value)
-                      : AssetImage(Assets.images.profileImage
-                              .path) // Use a default image if no profile image is set
-                          as ImageProvider,
-                )),
+            Obx(
+              () => CircleAvatar(
+                radius: 30.r,
+                backgroundImage: profileCtrl.profileImageUrl.value.isNotEmpty
+                    ? NetworkImage(profileCtrl.profileImageUrl.value)
+                    : AssetImage(Assets.images.profileImage
+                            .path) // Use a default image if no profile image is set
+                        as ImageProvider,
+              ),
+            ),
             Gap(12.w),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 8.w,
               children: [
                 Text(
-                  'Alex Thomson',
+                  _name,
                   style: AppStyle.kohSantepheap16w700C3F3F3F,
                 ),
                 Text(
@@ -356,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
               iconPath: Assets.icons.sales.path,
               title: AppStrings.totalSpent.tr,
               subtitle: AppStrings.trackTotalSpent.tr,
-              amount: '\$2800',
+              amount: '\$${transCtrl.history.value!.totalSpending}',
             ),
           ),
           Gap(12.w),
@@ -366,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
               iconPath: Assets.icons.coin.path,
               title: AppStrings.budgetLimit.tr,
               subtitle: AppStrings.underBudget.tr,
-              amount: '\$3000',
+              amount: '',
             ),
           ),
         ],
@@ -577,5 +592,48 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _showSubscriptionPlansAndPay() async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Fetch plans
+      final plans = await PaymentService.getSubscriptionPlans();
+
+      // Dismiss loading
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // Show plans
+      if (context.mounted) {
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => SubscriptionPlansBottomSheet(
+            plans: plans,
+            onSubscribe: (selectedPlan) async {
+              await PaymentService.handlePayment(
+                selectedPlan.planId,
+                context,
+                planName: selectedPlan.name,
+              );
+            },
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    }
   }
 }

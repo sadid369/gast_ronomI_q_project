@@ -66,7 +66,7 @@ class AppStrings {
   static const String passwordLengthAndContain =
       "Password must be at least 8 characters long and at least one uppercase letter, one lowercase letter, one number";
   static const String forgotPassword = "Forget password?";
-  static const String doYouHaveAnAccount = "Do you have an account?";
+  static const String doYouHaveAnAccount = "Do you have an account? ";
   static const String rememberMe = "Remember me";
   static const String dontHaveAAccount = "Don’t have a account? ";
 

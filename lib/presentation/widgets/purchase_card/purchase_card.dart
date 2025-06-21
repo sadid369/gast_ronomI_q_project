@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
+import 'package:groc_shopy/utils/app_colors/app_colors.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
 
 class PurchaseCard extends StatelessWidget {
@@ -53,7 +54,7 @@ class PurchaseCard extends StatelessWidget {
                 height: 24.h,
                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.2),
+                  color: AppColors.yellowFFD673.withOpacity(0.7),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(8.r),
                     bottomRight: Radius.circular(6.r),

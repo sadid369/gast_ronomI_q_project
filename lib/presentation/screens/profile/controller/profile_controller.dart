@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:groc_shopy/service/api_url.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img; // Add this import
 import '../../../../global/model/user_order_list.dart';
 import '../../../../helper/local_db/local_db.dart';
 import '../../../../service/api_service.dart';
@@ -19,6 +21,8 @@ class ProfileController extends GetxController {
   final RxList<Order> userOrders = <Order>[].obs;
   final RxBool isTotal = false.obs;
   final RxString profileImageUrl = ''.obs;
+  final RxString name = ''.obs;
+  final RxString role = ''.obs;
   // Pagination state
   int _currentPage = 1;
   int _totalPages = 1;
@@ -29,13 +33,23 @@ class ProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadProfileImageUrl();
+    loadProfile();
     fetchOrders(reset: true);
   }
 
-  Future<void> loadProfileImageUrl() async {
+  Future<void> loadProfile() async {
     final url = await SharedPrefsHelper.getString(AppConstants.image);
+    final _name = await SharedPrefsHelper.getString(AppConstants.fullName);
+    final _role = await SharedPrefsHelper.getString(AppConstants.userRole);
+    // log('Profile image URL: $url');
     profileImageUrl.value = url.addBaseUrl ?? '';
+    name.value = _name ?? '';
+    role.value = _role == "ADMIN" ? 'Manager' : _role ?? 'Employee';
+  }
+
+  String cleanUrl(String? url) {
+    if (url == null) return '';
+    return url.replaceAll('"', '').trim();
   }
 
   Future<void> fetchOrders({bool reset = false}) async {
@@ -82,8 +96,16 @@ class ProfileController extends GetxController {
   Future<void> pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
-      profileImageFile.value = File(pickedFile.path);
-      await uploadProfileImage(profileImageFile.value!);
+      File file = File(pickedFile.path);
+
+      // Fix orientation
+      final bytes = await file.readAsBytes();
+      final originalImage = img.decodeImage(bytes);
+      final fixedImage = img.bakeOrientation(originalImage!);
+      final fixedFile = await file.writeAsBytes(img.encodeJpg(fixedImage));
+
+      profileImageFile.value = fixedFile;
+      await uploadProfileImage(fixedFile);
     }
   }
 
@@ -110,10 +132,11 @@ class ProfileController extends GetxController {
     var response = await request.send();
     if (response.statusCode == 200) {
       final respStr = await response.stream.bytesToString();
-      final imagePath = respStr; // Adjust this if your API returns JSON
+      final imagePath = respStr;
+      // Adjust this if your API returns JSON
       await SharedPrefsHelper.setString(AppConstants.image, imagePath);
-      profileImageUrl.value = imagePath.addBaseUrl;
-      Get.snackbar('Success', 'Profile image updated!');
+      profileImageUrl.value = cleanUrl(imagePath.addBaseUrl);
+      // Get.snackbar('Success', 'Profile image updated!');
     } else {
       Get.snackbar('Error', 'Failed to upload image');
     }

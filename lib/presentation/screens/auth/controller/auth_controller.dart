@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
+import 'package:groc_shopy/utils/logger/logger.dart';
 
 import '../../../../core/routes/route_path.dart';
 import '../../../../core/routes/routes.dart';
@@ -16,15 +17,19 @@ import '../../../../utils/app_const/app_const.dart';
 import '../../../../utils/static_strings/static_strings.dart';
 
 class AuthController extends GetxController {
-  Rx<TextEditingController> fullNameController =
-      TextEditingController(text: kDebugMode ? "Sadid" : "").obs;
-  Rx<TextEditingController> emailController =
-      TextEditingController(text: kDebugMode ? "sadid.jones@gmail.com" : "")
-          .obs;
-  Rx<TextEditingController> passController =
-      TextEditingController(text: kDebugMode ? "123456Er" : "").obs;
-  Rx<TextEditingController> confirmController =
-      TextEditingController(text: kDebugMode ? "123456Er" : "").obs;
+  // Rx<TextEditingController> fullNameController =
+  //     TextEditingController(text: kDebugMode ? "Sadid" : "").obs;
+  // Rx<TextEditingController> emailController =
+  //     TextEditingController(text: kDebugMode ? "sadid.jones@gmail.com" : "")
+  //         .obs;
+  // Rx<TextEditingController> passController =
+  //     TextEditingController(text: kDebugMode ? "123456Er" : "").obs;
+  // Rx<TextEditingController> confirmController =
+  //     TextEditingController(text: kDebugMode ? "123456Er" : "").obs;
+  Rx<TextEditingController> fullNameController = TextEditingController().obs;
+  Rx<TextEditingController> emailController = TextEditingController().obs;
+  Rx<TextEditingController> passController = TextEditingController().obs;
+  Rx<TextEditingController> confirmController = TextEditingController().obs;
 
   Rx<TextEditingController> otpController = TextEditingController().obs;
 
@@ -35,6 +40,10 @@ class AuthController extends GetxController {
   ApiClient apiClient = serviceLocator();
 
   /// =================== Save Info ===================
+  String cleanUrl(String? url) {
+    if (url == null) return '';
+    return url.replaceAll('"', '').trim();
+  }
 
   saveInformation({required Response<dynamic> response}) {
     // dbHelper.storeTokenUserdata(
@@ -65,6 +74,7 @@ class AuthController extends GetxController {
     );
 
     if (response.statusCode == 200) {
+      // debugPrint("Sign In Response: ${response.body.toString()}");
       // save desired fields
       await SharedPrefsHelper.setString(
           AppConstants.fullName, response.body["full_name"] ?? "");
@@ -80,6 +90,19 @@ class AuthController extends GetxController {
           AppConstants.refresh, response.body["refresh"] ?? "");
       await SharedPrefsHelper.setInt(
           AppConstants.userID, response.body["id"] ?? 0);
+
+      // Save credentials if rememberMe is true
+      if (rememberMe.value) {
+        await SharedPrefsHelper.setString(
+            AppConstants.savedEmail, emailController.value.text);
+        await SharedPrefsHelper.setString(
+            AppConstants.savedPassword, passController.value.text);
+        await SharedPrefsHelper.setBool(AppConstants.rememberMe, true);
+      } else {
+        await SharedPrefsHelper.remove(AppConstants.savedEmail);
+        await SharedPrefsHelper.remove(AppConstants.savedPassword);
+        await SharedPrefsHelper.setBool(AppConstants.rememberMe, false);
+      }
       AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
     } else {
       // ignore: use_build_context_synchronously
@@ -127,9 +150,9 @@ class AuthController extends GetxController {
       url: ApiUrl.signUpClient.addBaseUrl,
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 201) {
       // Redirect to login screen upon successful sign-in
-      context.pushNamed(RoutePath.login.addBasePath);
+      context.push(RoutePath.auth.addBasePath);
     } else {
       checkApi(response: response, context: context);
     }
@@ -273,5 +296,20 @@ class AuthController extends GetxController {
 
     // Navigate to login (replace the entire stack)
     context.pushReplacement(RoutePath.auth.addBasePath);
+  }
+
+  Future<void> loadSavedCredentials() async {
+    final savedEmail =
+        await SharedPrefsHelper.getString(AppConstants.savedEmail);
+    final savedPassword =
+        await SharedPrefsHelper.getString(AppConstants.savedPassword);
+    final savedRememberMe =
+        await SharedPrefsHelper.getBool(AppConstants.rememberMe) ?? false;
+
+    if (savedRememberMe) {
+      emailController.value.text = savedEmail ?? '';
+      passController.value.text = savedPassword ?? '';
+      rememberMe.value = true;
+    }
   }
 }

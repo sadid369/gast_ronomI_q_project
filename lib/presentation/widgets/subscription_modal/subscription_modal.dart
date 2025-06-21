@@ -8,7 +8,8 @@ import 'package:groc_shopy/utils/text_style/text_style.dart';
 import '../custom_bottons/custom_button/app_button.dart';
 
 class SubscriptionModal extends StatelessWidget {
-  const SubscriptionModal({super.key});
+  final VoidCallback? onSubscribe;
+  const SubscriptionModal({super.key, this.onSubscribe});
 
   @override
   Widget build(BuildContext context) {
@@ -73,33 +74,39 @@ class SubscriptionModal extends StatelessWidget {
                       style: AppStyle.roboto16w700C090A0A,
                     ),
                     Gap(8.h),
-                    Text(
-                      '\$60.99',
-                      style: AppStyle.roboto40w700C090A0A,
-                    ),
+                    // Text(
+                    //   // '\$60.99',
+                    //   "",
+                    //   style: AppStyle.roboto40w700C090A0A,
+                    // ),
                     Gap(4.h),
-                    Text(
-                      AppStrings.forOneYear.tr,
-                      style: AppStyle.inter12w400C090A0A,
+                    // Text(
+                    //   AppStrings.forOneYear.tr,
+                    //   style: AppStyle.inter12w400C090A0A,
+                    // ),
+                    // Gap(16.h),
+                    // Text(
+                    //   AppStrings.unlimitedAccessTosSan.tr,
+                    //   style: AppStyle.inter14w400C090A0A,
+                    //   textAlign: TextAlign.center,
+                    // ),
+                    // Gap(20.h),
+                    AppButton(
+                      text: AppStrings.subscribe.tr,
+                      onPressed: onSubscribe, // <-- use the callback
+                      width: double.infinity,
+                      height: 48.h,
+                      backgroundColor: AppColors.yellowFFD673,
+                      borderRadius: 24.r,
+                      textStyle: AppStyle.inter16w500White,
                     ),
-                    Gap(16.h),
+                    Gap(20.h),
                     Text(
                       AppStrings.unlimitedAccessTosSan.tr,
                       style: AppStyle.inter14w400C090A0A,
                       textAlign: TextAlign.center,
                     ),
                     Gap(20.h),
-                    AppButton(
-                      text: AppStrings.subscribe.tr,
-                      onPressed: () {
-                        // Handle subscribe logic
-                      },
-                      width: double.infinity,
-                      height: 48.h,
-                      backgroundColor: AppColors.yellowFFD673,
-                      borderRadius: 24.r,
-                      textStyle: AppStyle.inter16w500White,
-                    )
                   ],
                 ),
               ),

@@ -29,6 +29,11 @@ class AuthScreenState extends State<AuthScreen> {
 
   // UI Constants
   static const double _horizontalPadding = 20;
+  @override
+  void initState() {
+    super.initState();
+    _authController.loadSavedCredentials();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +188,7 @@ class AuthScreenState extends State<AuthScreen> {
         _buildRememberMeCheckbox(),
         Gap(33.h),
         _buildSignInButton(() => _authController.signIn(context: context)),
+        // _buildSignInButton(() => context.push(RoutePath.home.addBasePath)),
         // () => context.push(RoutePath.home.addBasePath)),
         Gap(15.h),
         _buildSignUpOption(context),
@@ -214,19 +220,20 @@ class AuthScreenState extends State<AuthScreen> {
   }
 
   Widget _buildRememberMeCheckbox() {
-    return Row(
-      children: [
-        Checkbox(
-          value: _rememberMe,
-          onChanged: _onRememberMeChanged,
-          activeColor: AppColors.yellowFFD673,
-        ),
-        Text(
-          AppStrings.rememberMe.tr,
-          style: AppStyle.roboto14w400C000000,
-        ),
-      ],
-    );
+    return Obx(() => Row(
+          children: [
+            Checkbox(
+              value: _authController.rememberMe.value,
+              onChanged: (value) =>
+                  _authController.rememberMe.value = value ?? false,
+              activeColor: AppColors.yellowFFD673,
+            ),
+            Text(
+              AppStrings.rememberMe.tr,
+              style: AppStyle.roboto14w400C000000,
+            ),
+          ],
+        ));
   }
 
   Widget _buildSignInButton(VoidCallback onPressed) {

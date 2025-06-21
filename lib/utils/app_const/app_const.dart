@@ -27,6 +27,10 @@ class AppConstants {
   static const email = 'email';
   static const image = 'image';
   static const refresh = 'refresh';
+  // Add to AppConstants
+  static const String savedEmail = 'saved_email';
+  static const String savedPassword = 'saved_password';
+  static const String rememberMe = 'remember_me';
 }
 
 enum Status { loading, error, completed, internetError, noDataFound }

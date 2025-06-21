@@ -50,7 +50,7 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
                     _buildPasswordField(),
                     Gap(35.h),
                     _buildConfirmPasswordField(),
-                    _buildRememberMeCheckbox(),
+                    // _buildRememberMeCheckbox(),
                     Gap(33.h),
                     _buildSignUpButton(context),
                     Gap(15.h),
@@ -168,21 +168,21 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
     );
   }
 
-  Widget _buildRememberMeCheckbox() {
-    return Row(
-      children: [
-        Checkbox(
-          value: _rememberMe,
-          onChanged: _onRememberMeChanged,
-          activeColor: AppColors.yellowFFD673,
-        ),
-        Text(
-          AppStrings.rememberMe.tr,
-          style: AppStyle.roboto14w400C000000,
-        ),
-      ],
-    );
-  }
+  // Widget _buildRememberMeCheckbox() {
+  //   return Row(
+  //     children: [
+  //       Checkbox(
+  //         value: _rememberMe,
+  //         onChanged: _onRememberMeChanged,
+  //         activeColor: AppColors.yellowFFD673,
+  //       ),
+  //       Text(
+  //         AppStrings.rememberMe.tr,
+  //         style: AppStyle.roboto14w400C000000,
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildSignUpButton(BuildContext context) {
     return AppButton(
@@ -201,7 +201,7 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          AppStrings.dontHaveAAccount.tr,
+          AppStrings.doYouHaveAnAccount.tr,
           style: AppStyle.roboto14w400C000000,
         ),
         GestureDetector(
@@ -276,11 +276,11 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
     });
   }
 
-  void _onRememberMeChanged(bool? value) {
-    setState(() {
-      _rememberMe = value ?? false;
-    });
-  }
+  // void _onRememberMeChanged(bool? value) {
+  //   setState(() {
+  //     _rememberMe = value ?? false;
+  //   });
+  // }
 
   void _signInWithApple() {
     // Implement Apple sign in
