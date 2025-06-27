@@ -122,9 +122,12 @@ class ProfileController extends GetxController {
       Get.snackbar('Error', 'User not logged in');
       return;
     }
-
-    final url = Uri.parse(
-        'http://10.0.70.145:8001/user/api/v1/user/uploadimage/$userId/');
+    final _role = await SharedPrefsHelper.getString(AppConstants.userRole);
+    final url = _role == "EMPLOYEE"
+        ? Uri.parse(
+            'http://10.0.70.145:8001/employee/api/v1/user/employeeImageUpload/$userId/')
+        : Uri.parse(
+            'http://10.0.70.145:8001/user/api/v1/user/uploadimage/$userId/');
     var request = http.MultipartRequest('POST', url)
       ..headers['Authorization'] = 'Bearer $token'
       ..files.add(await http.MultipartFile.fromPath('image', imageFile.path));

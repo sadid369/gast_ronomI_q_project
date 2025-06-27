@@ -18,4 +18,5 @@ class ApiUrl {
   static const transaction = "/report/api/v1/daily-category-spending/";
   static const transactionWithInvoicImage =
       "/report/api/v1/user_order_list/?page=";
+  static const employeeSignIn = "/employee/api/v1/employee/login/";
 }

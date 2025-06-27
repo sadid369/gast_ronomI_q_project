@@ -27,9 +27,12 @@ class AuthController extends GetxController {
   // Rx<TextEditingController> confirmController =
   //     TextEditingController(text: kDebugMode ? "123456Er" : "").obs;
   Rx<TextEditingController> fullNameController = TextEditingController().obs;
-  Rx<TextEditingController> emailController = TextEditingController().obs;
-  Rx<TextEditingController> passController = TextEditingController().obs;
-  Rx<TextEditingController> confirmController = TextEditingController().obs;
+  Rx<TextEditingController> emailController =
+      TextEditingController(text: "sadid.jones@gmail.com").obs;
+  Rx<TextEditingController> passController =
+      TextEditingController(text: "123456Er").obs;
+  Rx<TextEditingController> confirmController =
+      TextEditingController(text: "123456Er").obs;
 
   Rx<TextEditingController> otpController = TextEditingController().obs;
 
@@ -88,6 +91,7 @@ class AuthController extends GetxController {
           AppConstants.userRole, response.body["role"] ?? "");
       await SharedPrefsHelper.setString(
           AppConstants.refresh, response.body["refresh"] ?? "");
+      await SharedPrefsHelper.setString("test", "admin");
       await SharedPrefsHelper.setInt(
           AppConstants.userID, response.body["id"] ?? 0);
 
@@ -111,6 +115,64 @@ class AuthController extends GetxController {
 
     signInLoading.value = false;
     signInLoading.refresh();
+  }
+
+  RxBool employeeSignInLoading = false.obs;
+  Future<void> employeeSignIn({required BuildContext context}) async {
+    employeeSignInLoading.value = true;
+
+    var body = {
+      "email": emailController.value.text,
+      "password": passController.value.text
+    };
+    var response = await apiClient.post(
+      showResult: true,
+      body: body,
+      isBasic: true,
+      url: ApiUrl.employeeSignIn.addBaseUrl,
+    );
+
+    if (response.statusCode == 200) {
+      // Save employee info from response
+      await SharedPrefsHelper.setString(
+          AppConstants.fullName, response.body["name"] ?? "");
+      await SharedPrefsHelper.setString(
+          AppConstants.email, response.body["email"] ?? "");
+      await SharedPrefsHelper.setString(
+          AppConstants.token, response.body["access"] ?? "");
+      await SharedPrefsHelper.setString(
+          AppConstants.userRole, response.body["role"] ?? "");
+      await SharedPrefsHelper.setString(
+          AppConstants.refresh, response.body["refresh"] ?? "");
+      await SharedPrefsHelper.setInt(
+          AppConstants.userID, response.body["id"] ?? 0);
+      await SharedPrefsHelper.setString(
+          "designation", response.body["designation"] ?? "");
+      await SharedPrefsHelper.setString("phone", response.body["phone"] ?? "");
+      // Save image if present
+      await SharedPrefsHelper.setString("test", "employee");
+      await SharedPrefsHelper.setString(
+          AppConstants.image, response.body["image"]?.toString() ?? "");
+
+      // Save credentials if rememberMe is true
+      if (rememberMe.value) {
+        await SharedPrefsHelper.setString(
+            AppConstants.savedEmail, emailController.value.text);
+        await SharedPrefsHelper.setString(
+            AppConstants.savedPassword, passController.value.text);
+        await SharedPrefsHelper.setBool(AppConstants.rememberMe, true);
+      } else {
+        await SharedPrefsHelper.remove(AppConstants.savedEmail);
+        await SharedPrefsHelper.remove(AppConstants.savedPassword);
+        await SharedPrefsHelper.setBool(AppConstants.rememberMe, false);
+      }
+      context.pushReplacement(RoutePath.home.addBasePath);
+    } else {
+      checkApi(response: response, context: context);
+    }
+
+    employeeSignInLoading.value = false;
+    employeeSignInLoading.refresh();
   }
 
   ///============================ Sign Up =========================
@@ -293,7 +355,7 @@ class AuthController extends GetxController {
     await SharedPrefsHelper.remove(AppConstants.image);
     await SharedPrefsHelper.remove(AppConstants.refresh);
     await SharedPrefsHelper.remove(AppConstants.userID);
-
+    await SharedPrefsHelper.remove("test");
     // Navigate to login (replace the entire stack)
     context.pushReplacement(RoutePath.auth.addBasePath);
   }

@@ -1,4 +1,4 @@
-package com.example.groc_shopy
+package com.gastronomiq.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

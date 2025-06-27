@@ -73,24 +73,7 @@ class SubscriptionModal extends StatelessWidget {
                       AppStrings.forMoreScan.tr,
                       style: AppStyle.roboto16w700C090A0A,
                     ),
-                    Gap(8.h),
-                    // Text(
-                    //   // '\$60.99',
-                    //   "",
-                    //   style: AppStyle.roboto40w700C090A0A,
-                    // ),
-                    Gap(4.h),
-                    // Text(
-                    //   AppStrings.forOneYear.tr,
-                    //   style: AppStyle.inter12w400C090A0A,
-                    // ),
-                    // Gap(16.h),
-                    // Text(
-                    //   AppStrings.unlimitedAccessTosSan.tr,
-                    //   style: AppStyle.inter14w400C090A0A,
-                    //   textAlign: TextAlign.center,
-                    // ),
-                    // Gap(20.h),
+                    Gap(12.h),
                     AppButton(
                       text: AppStrings.subscribe.tr,
                       onPressed: onSubscribe, // <-- use the callback

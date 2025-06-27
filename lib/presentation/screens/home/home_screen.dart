@@ -79,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    transCtrl.fetchHistory();
     _loadProfileImage();
     _showSubscriptionModal();
   }
@@ -322,8 +323,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildViewBreakdownButton() {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         // Your onPressed logic here
+        final res = await SharedPrefsHelper.getString('test');
+        print(res);
       },
       child: Container(
         alignment: Alignment.center,

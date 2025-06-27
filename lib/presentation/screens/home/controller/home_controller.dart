@@ -5,6 +5,7 @@ import '../../../../global/language/controller/language_controller.dart';
 import '../../../../service/api_service.dart';
 import '../../../../dependency_injection/path.dart';
 import '../../../../service/api_url.dart';
+import '../../transaction_history/controller/transaction_history_controller.dart';
 import '../home_screen.dart';
 
 class HomeController extends GetxController {
@@ -17,10 +18,12 @@ class HomeController extends GetxController {
   final RxBool loading = true.obs;
 
   final ApiClient _apiClient = serviceLocator<ApiClient>();
-
+  final TransactionHistoryController _transactionHistoryController =
+      Get.find<TransactionHistoryController>();
   @override
   void onInit() {
     super.onInit();
+    _transactionHistoryController.fetchHistory();
     fetchRecentOrders();
   }
 

@@ -27,11 +27,14 @@ class ReportScreen extends StatelessWidget {
   ];
 
   final List<Color> colorList = const [
-    Color.fromARGB(121, 239, 38, 38),
-    Color(0xFFDDDDDD),
-    Color(0xFFCF8989),
-    Color(0xFF9ACF89),
-    Color(0xFF89B4CF),
+    Color(0xFFE53935), // Vivid Red
+    Color(0xFF8E24AA), // Deep Purple
+    Color(0xFF3949AB), // Indigo Blue
+    Color(0xFF00897B), // Teal
+    Color(0xFFFDD835), // Bright Yellow
+    Color(0xFF43A047), // Green
+    Color(0xFFFB8C00), // Orange
+    Color(0xFF6D4C41), // Brown
   ];
 
   int _daysInMonth(int year, int month) {

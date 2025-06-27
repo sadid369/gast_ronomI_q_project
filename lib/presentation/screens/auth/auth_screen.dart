@@ -9,6 +9,7 @@ import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:groc_shopy/utils/app_colors/app_colors.dart';
 import 'package:groc_shopy/utils/static_strings/static_strings.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
+import '../../../helper/local_db/local_db.dart';
 import '../../widgets/custom_bottons/custom_button/app_button.dart';
 import '../../widgets/custom_text_form_field/custom_text_form.dart';
 import 'controller/auth_controller.dart';
@@ -214,7 +215,8 @@ class AuthScreenState extends State<AuthScreen> {
       children: [
         _buildRememberMeCheckbox(),
         Gap(33.h),
-        _buildSignInButton(() => context.push(RoutePath.main.addBasePath)),
+        _buildSignInButton(
+            () => _authController.employeeSignIn(context: context)),
       ],
     );
   }
@@ -338,8 +340,10 @@ class AuthScreenState extends State<AuthScreen> {
     });
   }
 
-  void _signInWithApple() {
+  void _signInWithApple() async {
     // Implement Apple sign in
+    final res = await SharedPrefsHelper.getString('test');
+    print(res);
   }
 
   void _signInWithGoogle() {
