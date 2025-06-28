@@ -170,9 +170,10 @@ class AuthController extends GetxController {
         await SharedPrefsHelper.setBool(AppConstants.rememberMe, false);
       }
       if (Get.isRegistered<HomeController>()) {
-        final homeController = Get.find<HomeController>();
-        await homeController.refreshAfterLogin();
+        Get.delete<HomeController>(force: true); // Remove old instance
       }
+      final homeController = Get.put(HomeController()); // Create new instance
+      await homeController.refreshAfterLogin();
       context.pushReplacement(RoutePath.home.addBasePath);
     } else {
       checkApi(response: response, context: context);

@@ -3,8 +3,10 @@ import 'package:get/get.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:groc_shopy/service/api_url.dart';
 import '../../../../global/model/transaction_history.dart';
+import '../../../../helper/local_db/local_db.dart';
 import '../../../../service/api_service.dart';
 import '../../../../dependency_injection/path.dart';
+import '../../../../utils/app_const/app_const.dart';
 
 class TransactionHistoryController extends GetxController {
   final history = Rxn<TransactionHistory>();
@@ -24,8 +26,19 @@ class TransactionHistoryController extends GetxController {
     errorMessage.value = null;
 
     try {
+      // Get user role and id
+      final role = await SharedPrefsHelper.getString(AppConstants.userRole);
+      final userId = await SharedPrefsHelper.getInt(AppConstants.userID);
+
+      String url;
+      if (role == "employee" && userId != null) {
+        url = ApiUrl.employeeDailySpending(userId);
+      } else {
+        url = ApiUrl.transaction.addBaseUrl;
+      }
+
       final resp = await _apiClient.get(
-        url: ApiUrl.transaction.addBaseUrl,
+        url: url,
         showResult: true,
       );
 

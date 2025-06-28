@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
 import '../../../../global/language/controller/language_controller.dart';
@@ -40,6 +41,7 @@ class HomeController extends GetxController {
       String apiUrl;
 
       if (userRole.toLowerCase() == "employee") {
+        debugPrint("Fetching recent orders for employee role");
         // Get user ID for employee endpoint
         final userId = await SharedPrefsHelper.getInt(AppConstants.userID) ?? 0;
         apiUrl = "${ApiUrl.employeeRecentOrders}$userId".addBaseUrl;

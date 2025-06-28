@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../helper/local_db/local_db.dart';
 import '../../../../service/api_service.dart';
 import '../../../../dependency_injection/path.dart';
 import '../../../../core/routes/route_path.dart';
 import '../../../../service/api_url.dart';
+import '../../../../utils/app_const/app_const.dart';
 
 class ScanController extends ChangeNotifier {
   final ApiClient _apiClient = serviceLocator();
@@ -34,9 +36,20 @@ class ScanController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Get user role and id
+      final role = await SharedPrefsHelper.getString(AppConstants.userRole);
+      final userId = await SharedPrefsHelper.getInt(AppConstants.userID);
+
+      String url;
+      if (role == "employee" && userId != null) {
+        debugPrint("User role with ID: $userId");
+        url = ApiUrl.employeeScanReceipt(userId);
+      } else {
+        url = "${ApiUrl.baseUrl}${ApiUrl.scanReceipt}";
+      }
+
       final resp = await _apiClient.multipartRequest(
-        // url: _scanReceiptUrl,
-        url: ApiUrl.scanReceipt.addBaseUrl,
+        url: url,
         reqType: 'POST',
         multipartBody: [MultipartBody('receipt', imageFile)],
       );

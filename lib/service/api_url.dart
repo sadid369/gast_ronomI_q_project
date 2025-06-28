@@ -20,4 +20,11 @@ class ApiUrl {
   static const transactionWithInvoicImage =
       "/report/api/v1/user_order_list/?page=";
   static const employeeSignIn = "/employee/api/v1/employee/login/";
+  static String employeeScanReceipt(int id) =>
+      "$baseUrl/receipt/employee/scan-receipt/$id/";
+  static String employeeDailySpending(int id) =>
+      "$baseUrl/report/api/v1/employee/daily-spending/$id";
+  static const employeeOrderList = "/report/api/v1/employee_order_list/?page=";
+  static String employeeOrderListWithId(int id, int page) =>
+      "$baseUrl/report/api/v1/employee_order_list/$id/?page=$page";
 }

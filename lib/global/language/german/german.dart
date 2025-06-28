@@ -128,7 +128,7 @@ import '../../../utils/static_strings/static_strings.dart';
 Map<String, String> german = {
   ///====================== Initial ========================
   AppStrings.appName: "GastRonomIQ",
-  AppStrings.appTagLine: "Artikel verfolgen,\nBerechnen, Gemeinsam",
+  AppStrings.appTagLine: "Artikel verfolgen, Berechnen, Verbessern",
   AppStrings.getStarted: "Start",
   AppStrings.welcome: "Willkommen",
 

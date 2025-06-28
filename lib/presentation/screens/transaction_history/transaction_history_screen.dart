@@ -76,14 +76,14 @@ class TransactionHistoryScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _smallButton(AppStrings.export.tr),
-                    Gap(12.w),
-                    _smallButton(AppStrings.download.tr),
-                  ],
-                ),
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.end,
+                //   children: [
+                //     _smallButton(AppStrings.export.tr),
+                //     Gap(12.w),
+                //     _smallButton(AppStrings.download.tr),
+                //   ],
+                // ),
                 Expanded(
                   child: ListView.builder(
                     itemCount: history.transactions.length,

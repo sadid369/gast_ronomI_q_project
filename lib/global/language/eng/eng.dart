@@ -3,7 +3,7 @@ import '../../../utils/static_strings/static_strings.dart';
 Map<String, String> english = {
   ///====================== Initial ========================
   AppStrings.appName: "GastRonomIQ",
-  AppStrings.appTagLine: "Track items, \nCalculate, Together",
+  AppStrings.appTagLine: "Track items, \nCalculate, Improve",
   AppStrings.getStarted: "Get Started",
   AppStrings.welcome: "Welcome",
 

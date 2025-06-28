@@ -1,7 +1,7 @@
 class AppStrings {
   ///====================== Initial ========================
   static const String appName = "GastRonomIQ";
-  static const String appTagLine = "Track items, \nCalculate, Together";
+  static const String appTagLine = "Track items, \nCalculate, Improve";
   static const String getStarted = "Get Started";
   static const String welcome = "Welcome";
 
@@ -53,7 +53,7 @@ class AppStrings {
       'Enter the 5-digit code mentioned in the email';
   static const String confirm = 'Confirm';
   static const String confirmPassword =
-      'Your password has been successfully reset. click confirm to set a new password';
+      'Your password has been successfully reset. Click confirm to set a new password';
   static RegExp emailRegexp = RegExp(
       r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
   static const String password = "Password";
@@ -123,7 +123,7 @@ class AppStrings {
   ///====================== Profile ========================
   static const String profile = "Profile";
   static const String unlockExclusiveFeatures =
-      "Unlock exclusive features and supercharge your dating experience.";
+      "Unlock unlimited scans and supercharge your logistics";
   // static const String upgradeFrom = "Upgrade from \$9.99";
   static const String manager = "Manager";
   static const String addedReceipt = "Added Receipt";

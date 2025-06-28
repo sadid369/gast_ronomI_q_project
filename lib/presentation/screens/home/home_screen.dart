@@ -76,11 +76,14 @@ class _HomeScreenState extends State<HomeScreen> {
   final transCtrl = Get.find<TransactionHistoryController>();
   String? _profileImageUrl;
   String _name = '';
+  String _userRole = ''; // Add this line
+
   @override
   void initState() {
     super.initState();
     transCtrl.fetchHistory();
     _loadProfileImage();
+    _loadUserRole(); // Add this line
     _showSubscriptionModal();
   }
 
@@ -88,9 +91,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final url = await SharedPrefsHelper.getString(AppConstants.image);
     final name = await SharedPrefsHelper.getString(AppConstants.fullName);
     setState(() {
-      _profileImageUrl =
-          url.addBaseUrl; // Use your addBaseUrl extension if needed
+      _profileImageUrl = url.addBaseUrl;
       _name = name;
+    });
+  }
+
+  Future<void> _loadUserRole() async {
+    final role = await SharedPrefsHelper.getString(AppConstants.userRole);
+    setState(() {
+      _userRole = role ?? '';
     });
   }
 
@@ -122,11 +131,27 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
             child: SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _buildHeader(),
                   Gap(24.h),
-                  _buildMonthlyReportCard(),
+                  // Conditionally render based on role
+                  if (_userRole == "admin" || _userRole == "user")
+                    _buildMonthlyReportCard()
+                  else if (_userRole == "employee")
+                    Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          Assets.images.report.path,
+                        ),
+                      ),
+                    ),
+
                   Gap(24.h),
                   _buildMonthlyGrocerySpendingSection(),
                   Gap(8.h),

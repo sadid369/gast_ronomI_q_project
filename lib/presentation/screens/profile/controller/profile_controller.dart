@@ -60,8 +60,18 @@ class ProfileController extends GetxController {
     }
     isLoadingOrders.value = true;
     try {
+      final role = await SharedPrefsHelper.getString(AppConstants.userRole);
+      final userId = await SharedPrefsHelper.getInt(AppConstants.userID);
+
+      String url;
+      if (role?.toLowerCase() == "employee" && userId != null) {
+        url = ApiUrl.employeeOrderListWithId(userId, _currentPage);
+      } else {
+        url = '${ApiUrl.transactionWithInvoicImage.addBaseUrl}$_currentPage';
+      }
+
       final resp = await _apiClient.get(
-        url: '${ApiUrl.transactionWithInvoicImage.addBaseUrl}$_currentPage',
+        url: url,
         showResult: true,
       );
       if (resp.statusCode == 200) {
@@ -123,7 +133,7 @@ class ProfileController extends GetxController {
       return;
     }
     final _role = await SharedPrefsHelper.getString(AppConstants.userRole);
-    final url = _role == "EMPLOYEE"
+    final url = _role == "employee"
         ? Uri.parse(
             'http://10.0.70.145:8001/employee/api/v1/user/employeeImageUpload/$userId/')
         : Uri.parse(

@@ -12,6 +12,22 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart' as _svg;
 import 'package:vector_graphics/vector_graphics.dart' as _vg;
 
+class $AssetsAnimationGen {
+  const $AssetsAnimationGen();
+
+  /// File path: assets/animation/congrats.json
+  String get congrats => 'assets/animation/congrats.json';
+
+  /// File path: assets/animation/success.json
+  String get success => 'assets/animation/success.json';
+
+  /// File path: assets/animation/working.json
+  String get working => 'assets/animation/working.json';
+
+  /// List of all assets
+  List<String> get values => [congrats, success, working];
+}
+
 class $AssetsIconsGen {
   const $AssetsIconsGen();
 
@@ -44,6 +60,9 @@ class $AssetsIconsGen {
 
   /// File path: assets/icons/dairy.svg
   SvgGenImage get dairy => const SvgGenImage('assets/icons/dairy.svg');
+
+  /// File path: assets/icons/dashboard.svg
+  SvgGenImage get dashboard => const SvgGenImage('assets/icons/dashboard.svg');
 
   /// File path: assets/icons/drinks.svg
   SvgGenImage get drinks => const SvgGenImage('assets/icons/drinks.svg');
@@ -81,6 +100,9 @@ class $AssetsIconsGen {
 
   /// File path: assets/icons/home.svg
   SvgGenImage get home => const SvgGenImage('assets/icons/home.svg');
+
+  /// File path: assets/icons/icon.png
+  AssetGenImage get icon => const AssetGenImage('assets/icons/icon.png');
 
   /// File path: assets/icons/language.png
   AssetGenImage get language =>
@@ -133,6 +155,9 @@ class $AssetsIconsGen {
   SvgGenImage get transaction =>
       const SvgGenImage('assets/icons/transaction.svg');
 
+  /// File path: assets/icons/users.svg
+  SvgGenImage get users => const SvgGenImage('assets/icons/users.svg');
+
   /// File path: assets/icons/vegetables.svg
   SvgGenImage get vegetables =>
       const SvgGenImage('assets/icons/vegetables.svg');
@@ -148,6 +173,7 @@ class $AssetsIconsGen {
     cart,
     coin,
     dairy,
+    dashboard,
     drinks,
     ellipsisWhite,
     email,
@@ -159,6 +185,7 @@ class $AssetsIconsGen {
     google,
     graph,
     home,
+    icon,
     language,
     logo,
     logout,
@@ -175,6 +202,7 @@ class $AssetsIconsGen {
     shop,
     star,
     transaction,
+    users,
     vegetables,
   ];
 }
@@ -202,6 +230,9 @@ class $AssetsImagesGen {
   AssetGenImage get profileImage =>
       const AssetGenImage('assets/images/profile_image.png');
 
+  /// File path: assets/images/report.png
+  AssetGenImage get report => const AssetGenImage('assets/images/report.png');
+
   /// List of all assets
   List<AssetGenImage> get values => [
     brocoli,
@@ -210,12 +241,14 @@ class $AssetsImagesGen {
     invoicePlaceholder,
     meat,
     profileImage,
+    report,
   ];
 }
 
 class Assets {
   const Assets._();
 
+  static const $AssetsAnimationGen animation = $AssetsAnimationGen();
   static const $AssetsIconsGen icons = $AssetsIconsGen();
   static const $AssetsImagesGen images = $AssetsImagesGen();
 }
