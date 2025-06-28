@@ -14,6 +14,7 @@ class ApiUrl {
   static const setNewPasswordAfterOtp =
       "/user/api/v1/set-new-password-after-otp/";
   static const lastScanInvoiceItems = "/report/orders/recent/";
+  static const employeeRecentOrders = "/report/employee/recent-orders/";
   static const scanReceipt = "/receipt/scan-receipt/";
   static const transaction = "/report/api/v1/daily-category-spending/";
   static const transactionWithInvoicImage =

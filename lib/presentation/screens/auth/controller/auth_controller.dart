@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
+import 'package:groc_shopy/presentation/screens/home/controller/home_controller.dart';
 import 'package:groc_shopy/utils/logger/logger.dart';
 
 import '../../../../core/routes/route_path.dart';
@@ -41,6 +42,7 @@ class AuthController extends GetxController {
   Rx<bool> isClient = true.obs;
 
   ApiClient apiClient = serviceLocator();
+  final HomeController homeController = Get.find<HomeController>();
 
   /// =================== Save Info ===================
   String cleanUrl(String? url) {
@@ -107,6 +109,7 @@ class AuthController extends GetxController {
         await SharedPrefsHelper.remove(AppConstants.savedPassword);
         await SharedPrefsHelper.setBool(AppConstants.rememberMe, false);
       }
+
       AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
     } else {
       // ignore: use_build_context_synchronously
@@ -165,6 +168,10 @@ class AuthController extends GetxController {
         await SharedPrefsHelper.remove(AppConstants.savedEmail);
         await SharedPrefsHelper.remove(AppConstants.savedPassword);
         await SharedPrefsHelper.setBool(AppConstants.rememberMe, false);
+      }
+      if (Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
+        await homeController.refreshAfterLogin();
       }
       context.pushReplacement(RoutePath.home.addBasePath);
     } else {
