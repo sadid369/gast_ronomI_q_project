@@ -31,13 +31,24 @@ class _ScannedItemsScreenState extends State<ScannedItemsScreen> {
   final transController = Get.find<TransactionHistoryController>();
   final profile = Get.find<ProfileController>();
 
+  // Always create a fresh controller instance
   late final ScannedItemsController scannedItemsController;
 
   @override
   void initState() {
     super.initState();
-    scannedItemsController = ScannedItemsController();
-    scannedItemsController.fetchReceiptAndItems().then((_) async {
+
+    // Always delete existing controller and create fresh one
+    if (Get.isRegistered<ScannedItemsController>()) {
+      Get.delete<ScannedItemsController>(force: true);
+    }
+
+    // Create a new controller instance
+    scannedItemsController = Get.put(ScannedItemsController());
+    
+    debugPrint("ScannedItemsScreen initState completed");
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ctrl.fetchRecentOrders();
       await transController.fetchHistory();
       await profile.fetchOrders();
@@ -46,7 +57,10 @@ class _ScannedItemsScreenState extends State<ScannedItemsScreen> {
 
   @override
   void dispose() {
-    scannedItemsController.dispose();
+    // Clean up the controller when screen is disposed
+    if (Get.isRegistered<ScannedItemsController>()) {
+      Get.delete<ScannedItemsController>(force: true);
+    }
     super.dispose();
   }
 
@@ -54,9 +68,8 @@ class _ScannedItemsScreenState extends State<ScannedItemsScreen> {
   Widget build(BuildContext context) {
     final File? image = widget.extras['image'];
 
-    return AnimatedBuilder(
-      animation: scannedItemsController,
-      builder: (context, _) {
+    return GetBuilder<ScannedItemsController>(
+      builder: (controller) {
         return Scaffold(
           body: SafeArea(
             child: Padding(
@@ -139,49 +152,109 @@ class _ScannedItemsScreenState extends State<ScannedItemsScreen> {
   }
 
   Widget _buildItemsList() {
-    if (scannedItemsController.isLoading) {
+    return Obx(() {
+      debugPrint("Building items list - Loading: ${scannedItemsController.isLoading}, Items: ${scannedItemsController.scannedItems.length}, Error: ${scannedItemsController.errorMessage}");
+      
+      if (scannedItemsController.isLoading) {
+        return Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.yellowFFD673),
+                ),
+                Gap(16.h),
+                Text(
+                  "Loading recent scans...",
+                  style: AppStyle.roboto14w400C000000,
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      if (scannedItemsController.errorMessage.isNotEmpty) {
+        return Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 48.sp,
+                  color: Colors.red,
+                ),
+                Gap(16.h),
+                Text(
+                  scannedItemsController.errorMessage,
+                  style: AppStyle.roboto14w400C000000,
+                  textAlign: TextAlign.center,
+                ),
+                Gap(16.h),
+                ElevatedButton(
+                  onPressed: () {
+                    scannedItemsController.refreshData();
+                  },
+                  child: Text("Retry"),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      if (scannedItemsController.scannedItems.isEmpty) {
+        return Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.receipt_long,
+                  size: 64.sp,
+                  color: Colors.grey,
+                ),
+                Gap(16.h),
+                Text(
+                  "No recent scans found",
+                  style: AppStyle.roboto16w400C000000,
+                ),
+                Gap(8.h),
+                Text(
+                  "Your scanned receipts will appear here",
+                  style: AppStyle.roboto12w400C80000000,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
       return Expanded(
-        child: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.yellowFFD673),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 16.h),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: ListView.separated(
+            padding: EdgeInsets.all(12.w),
+            itemCount: scannedItemsController.scannedItems.length,
+            separatorBuilder: (_, __) => Divider(
+              height: 24.h,
+              color: Colors.grey.shade300,
+            ),
+            itemBuilder: (context, index) {
+              final item = scannedItemsController.scannedItems[index];
+              return _buildItemRow(item);
+            },
           ),
         ),
       );
-    }
-
-    if (scannedItemsController.errorMessage.isNotEmpty) {
-      return Expanded(
-        child: Center(
-          child: Text(
-            scannedItemsController.errorMessage,
-            style: AppStyle.roboto14w400C000000,
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
-
-    return Expanded(
-      child: Container(
-        margin: EdgeInsets.only(bottom: 16.h),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: ListView.separated(
-          padding: EdgeInsets.all(12.w),
-          itemCount: scannedItemsController.scannedItems.length,
-          separatorBuilder: (_, __) => Divider(
-            height: 24.h,
-            color: Colors.grey.shade300,
-          ),
-          itemBuilder: (context, index) {
-            final item = scannedItemsController.scannedItems[index];
-            return _buildItemRow(item);
-          },
-        ),
-      ),
-    );
+    });
   }
 
   Widget _buildItemRow(ReceiptItem item) {

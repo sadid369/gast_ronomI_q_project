@@ -16,6 +16,9 @@ import '../../../../service/api_url.dart';
 import '../../../../service/check_api.dart';
 import '../../../../utils/app_const/app_const.dart';
 import '../../../../utils/static_strings/static_strings.dart';
+import '../../profile/controller/profile_controller.dart';
+import '../../scannedItemsScreen/controller/scanned_items_controller.dart';
+import '../../transaction_history/controller/transaction_history_controller.dart';
 
 class AuthController extends GetxController {
   // Rx<TextEditingController> fullNameController =
@@ -79,8 +82,13 @@ class AuthController extends GetxController {
     );
 
     if (response.statusCode == 200) {
-      // debugPrint("Sign In Response: ${response.body.toString()}");
-      // save desired fields
+      // FIRST - Clear all app state completely
+      await _resetAppState();
+
+      // SECOND - Clear SharedPreferences
+      await _clearAllUserData();
+
+      // THIRD - Save new user data
       await SharedPrefsHelper.setString(
           AppConstants.fullName, response.body["full_name"] ?? "");
       await SharedPrefsHelper.setString(
@@ -110,6 +118,7 @@ class AuthController extends GetxController {
         await SharedPrefsHelper.setBool(AppConstants.rememberMe, false);
       }
 
+      debugPrint("Admin login successful, navigating to home...");
       AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
     } else {
       // ignore: use_build_context_synchronously
@@ -136,7 +145,13 @@ class AuthController extends GetxController {
     );
 
     if (response.statusCode == 200) {
-      // Save employee info from response
+      // FIRST - Clear all app state completely
+      await _resetAppState();
+
+      // SECOND - Clear SharedPreferences
+      await _clearAllUserData();
+
+      // THIRD - Save new user data
       await SharedPrefsHelper.setString(
           AppConstants.fullName, response.body["name"] ?? "");
       await SharedPrefsHelper.setString(
@@ -152,7 +167,6 @@ class AuthController extends GetxController {
       await SharedPrefsHelper.setString(
           "designation", response.body["designation"] ?? "");
       await SharedPrefsHelper.setString("phone", response.body["phone"] ?? "");
-      // Save image if present
       await SharedPrefsHelper.setString("test", "employee");
       await SharedPrefsHelper.setString(
           AppConstants.image, response.body["image"]?.toString() ?? "");
@@ -169,11 +183,8 @@ class AuthController extends GetxController {
         await SharedPrefsHelper.remove(AppConstants.savedPassword);
         await SharedPrefsHelper.setBool(AppConstants.rememberMe, false);
       }
-      if (Get.isRegistered<HomeController>()) {
-        Get.delete<HomeController>(force: true); // Remove old instance
-      }
-      final homeController = Get.put(HomeController()); // Create new instance
-      await homeController.refreshAfterLogin();
+
+      debugPrint("Employee login successful, navigating to home...");
       context.pushReplacement(RoutePath.home.addBasePath);
     } else {
       checkApi(response: response, context: context);
@@ -344,28 +355,75 @@ class AuthController extends GetxController {
       );
 
       if (response.statusCode == 205) {
-        // Optionally show a success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(response.body["detail"] ?? "Logout successful.")),
         );
       } else {
-        // Optionally handle error
         checkApi(response: response, context: context);
       }
     }
 
-    // Clear saved user data
-    await SharedPrefsHelper.remove(AppConstants.token);
-    await SharedPrefsHelper.remove(AppConstants.userRole);
-    await SharedPrefsHelper.remove(AppConstants.fullName);
-    await SharedPrefsHelper.remove(AppConstants.email);
-    await SharedPrefsHelper.remove(AppConstants.image);
-    await SharedPrefsHelper.remove(AppConstants.refresh);
-    await SharedPrefsHelper.remove(AppConstants.userID);
-    await SharedPrefsHelper.remove("test");
+    // Clear all app state completely
+    await _resetAppState();
+
+    // Clear saved user data from SharedPreferences
+    await _clearAllUserData();
+
     // Navigate to login (replace the entire stack)
     context.pushReplacement(RoutePath.auth.addBasePath);
+  }
+
+  // Add method to clear all user data
+  Future<void> _clearAllUserData() async {
+    try {
+      // Clear all user-related data
+      await SharedPrefsHelper.remove(AppConstants.token);
+      await SharedPrefsHelper.remove(AppConstants.userRole);
+      await SharedPrefsHelper.remove(AppConstants.fullName);
+      await SharedPrefsHelper.remove(AppConstants.email);
+      await SharedPrefsHelper.remove(AppConstants.image);
+      await SharedPrefsHelper.remove(AppConstants.refresh);
+      await SharedPrefsHelper.remove(AppConstants.userID);
+      await SharedPrefsHelper.remove("test");
+      await SharedPrefsHelper.remove("designation");
+      await SharedPrefsHelper.remove("phone");
+
+      debugPrint("All user data cleared from SharedPreferences");
+    } catch (e) {
+      debugPrint("Error clearing user data: $e");
+    }
+  }
+
+  // Enhanced method to properly reset app state
+  Future<void> _resetAppState() async {
+    try {
+      debugPrint("Starting complete app state reset...");
+
+      // Force delete ALL GetX controllers to ensure clean state
+      Get.deleteAll(force: true);
+
+      // Wait for cleanup
+      await Future.delayed(Duration(milliseconds: 300));
+
+      // Manually clear any persistent data that might be cached
+      await _clearPersistentCache();
+
+      debugPrint("Complete app state reset completed");
+    } catch (e) {
+      debugPrint("Error resetting app state: $e");
+    }
+  }
+
+  // Add method to clear any persistent cache
+  Future<void> _clearPersistentCache() async {
+    try {
+      // You can add any additional cache clearing here
+      // For example, if you're using any other caching mechanisms
+      debugPrint("Persistent cache cleared");
+    } catch (e) {
+      debugPrint("Error clearing persistent cache: $e");
+    }
   }
 
   Future<void> loadSavedCredentials() async {

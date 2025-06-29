@@ -12,7 +12,8 @@ import '../../transaction_history/controller/transaction_history_controller.dart
 import '../home_screen.dart';
 
 class HomeController extends GetxController {
-  final LanguageController _langCtrl = Get.find<LanguageController>();
+  // Make LanguageController optional to avoid dependency issues
+  LanguageController? _langCtrl;
 
   /// Holds the recent items
   final RxList<RecentItem> items = <RecentItem>[].obs;
@@ -21,39 +22,73 @@ class HomeController extends GetxController {
   final RxBool loading = true.obs;
 
   final ApiClient _apiClient = serviceLocator<ApiClient>();
-  final TransactionHistoryController _transactionHistoryController =
-      Get.find<TransactionHistoryController>();
+
+  // Make transaction controller optional to avoid dependency issues
+  TransactionHistoryController? _transactionHistoryController;
 
   @override
   void onInit() {
     super.onInit();
-    _transactionHistoryController.fetchHistory();
-    fetchRecentOrders();
+    debugPrint("HomeController onInit - clearing existing data");
+
+    // Initialize LanguageController if available
+    if (Get.isRegistered<LanguageController>()) {
+      _langCtrl = Get.find<LanguageController>();
+    }
+
+    // Always clear existing data first
+    items.clear();
+    loading.value = true;
+
+    // Initialize transaction controller if available
+    if (Get.isRegistered<TransactionHistoryController>()) {
+      _transactionHistoryController = Get.find<TransactionHistoryController>();
+    }
+
+    // Fetch fresh data
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    try {
+      debugPrint("Initializing fresh data for HomeController");
+      await fetchRecentOrders();
+    } catch (e) {
+      debugPrint("Error initializing home data: $e");
+      loading.value = false;
+    }
   }
 
   Future<void> fetchRecentOrders() async {
     loading.value = true;
+    items.clear(); // Always clear existing data first
+
     try {
       // Get user role from shared preferences
       final userRole =
           await SharedPrefsHelper.getString(AppConstants.userRole) ?? "";
+      final userId = await SharedPrefsHelper.getInt(AppConstants.userID) ?? 0;
+
+      debugPrint("Fetching orders for role: $userRole, userId: $userId");
 
       String apiUrl;
 
-      if (userRole.toLowerCase() == "employee") {
+      if (userRole == "employee") {
         debugPrint("Fetching recent orders for employee role");
-        // Get user ID for employee endpoint
-        final userId = await SharedPrefsHelper.getInt(AppConstants.userID) ?? 0;
         apiUrl = "${ApiUrl.employeeRecentOrders}$userId".addBaseUrl;
       } else {
-        // Default to admin/user endpoint
+        debugPrint("Fetching recent orders for admin/client role");
         apiUrl = ApiUrl.lastScanInvoiceItems.addBaseUrl;
       }
+
+      debugPrint("API URL: $apiUrl");
 
       final resp = await _apiClient.get(
         url: apiUrl,
         showResult: true,
       );
+
+      debugPrint("API Response - Status: ${resp.statusCode}");
 
       if (resp.statusCode == 200) {
         final jsonBody = resp.body is Map<String, dynamic>
@@ -61,24 +96,44 @@ class HomeController extends GetxController {
             : json.decode(resp.body.toString());
         final order = RecentOrder.fromJson(jsonBody);
         items.assignAll(order.items);
+        debugPrint("Loaded ${items.length} items for $userRole");
       } else {
-        // TODO: error handling
-        print("Error fetching recent orders: ${resp.statusCode}");
+        debugPrint("Error fetching recent orders: ${resp.statusCode}");
+        debugPrint("Response body: ${resp.body}");
       }
     } catch (e) {
-      // TODO: exception handling
-      print("Exception in fetchRecentOrders: $e");
+      debugPrint("Exception in fetchRecentOrders: $e");
     } finally {
       loading.value = false;
     }
   }
 
   Future<void> refreshAfterLogin() async {
-    await _transactionHistoryController.fetchHistory();
-    await fetchRecentOrders();
+    debugPrint("Refreshing data after login");
+    loading.value = true;
+    items.clear(); // Clear existing data
+
+    try {
+      await _transactionHistoryController?.fetchHistory();
+      await fetchRecentOrders();
+    } catch (e) {
+      debugPrint("Error refreshing after login: $e");
+    }
   }
 
   void changeLanguage(String code) {
-    _langCtrl.changeLanguage(code == 'en' ? 'English' : 'German');
+    if (_langCtrl != null) {
+      _langCtrl!.changeLanguage(code == 'en' ? 'English' : 'German');
+    } else {
+      debugPrint("LanguageController not available");
+    }
+  }
+
+  @override
+  void onClose() {
+    debugPrint("HomeController onClose - clearing data");
+    // Clean up when controller is disposed
+    items.clear();
+    super.onClose();
   }
 }

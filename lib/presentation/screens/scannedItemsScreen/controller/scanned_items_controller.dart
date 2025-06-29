@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/route_manager.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:groc_shopy/presentation/screens/profile/controller/profile_controller.dart';
 import 'package:groc_shopy/service/api_url.dart';
@@ -35,59 +34,136 @@ class ReceiptItem {
   }
 }
 
-class ScannedItemsController extends ChangeNotifier {
+class ScannedItemsController extends GetxController {
   final ApiClient _apiClient = serviceLocator();
-  final ProfileController _profileController = Get.find<ProfileController>();
-  List<ReceiptItem> scannedItems = [];
-  bool isLoading = true;
-  String errorMessage = '';
+  ProfileController? _profileController;
+  
+  final RxList<ReceiptItem> _scannedItems = <ReceiptItem>[].obs;
+  final RxBool _isLoading = false.obs;
+  final RxString _errorMessage = ''.obs;
+  
+  // Track current user session
+  String? _lastUserRole;
+  int? _lastUserId;
 
-  // final String _receiptUrl = 'http://10.0.70.145:8001/report/orders/recent/';
+  // Getters
+  List<ReceiptItem> get scannedItems => _scannedItems;
+  bool get isLoading => _isLoading.value;
+  String get errorMessage => _errorMessage.value;
+
+  @override
+  void onInit() {
+    super.onInit();
+    debugPrint("ScannedItemsController onInit called");
+    
+    // Always start fresh
+    _clearAllData();
+    
+    // Initialize ProfileController if available
+    if (Get.isRegistered<ProfileController>()) {
+      _profileController = Get.find<ProfileController>();
+    }
+    
+    // Start fetching data
+    fetchReceiptAndItems();
+  }
 
   Future<void> fetchReceiptAndItems() async {
-    isLoading = true;
-    errorMessage = '';
-    notifyListeners();
+    debugPrint("Starting fetchReceiptAndItems...");
+    
+    // Get current user info
+    final currentRole = await SharedPrefsHelper.getString(AppConstants.userRole);
+    final currentUserId = await SharedPrefsHelper.getInt(AppConstants.userID);
+    
+    // Check if user session has changed
+    if (_hasUserSessionChanged(currentRole, currentUserId)) {
+      debugPrint("User session changed - clearing data and fetching fresh");
+      _clearAllData();
+      _lastUserRole = currentRole;
+      _lastUserId = currentUserId;
+    }
+    
+    _isLoading.value = true;
+    _errorMessage.value = '';
+    _scannedItems.clear();
 
     try {
-      // Get user role and id
-      final role = await SharedPrefsHelper.getString(AppConstants.userRole);
-      final userId = await SharedPrefsHelper.getInt(AppConstants.userID);
+      debugPrint("User role: $currentRole, User ID: $currentUserId");
 
       String url;
-      if (role == "employee" && userId != null) {
-        debugPrint("employee ID: $userId");
-        url = "${ApiUrl.employeeRecentOrders}$userId".addBaseUrl;
+      if (currentRole == "employee" && currentUserId != null) {
+        debugPrint("Fetching for employee ID: $currentUserId");
+        url = "${ApiUrl.employeeRecentOrders}$currentUserId".addBaseUrl;
       } else {
+        debugPrint("Fetching for admin/client role: $currentRole");
         url = ApiUrl.lastScanInvoiceItems.addBaseUrl;
       }
+
       debugPrint("Fetching receipt from URL: $url");
+
       final resp = await _apiClient.get(
         url: url,
         showResult: true,
       );
 
+      debugPrint("API Response - Status: ${resp.statusCode}");
+
       if (resp.statusCode != null &&
           resp.statusCode! >= 200 &&
           resp.statusCode! < 300) {
-        await _profileController.fetchOrders();
+        
+        // Fetch profile orders if controller is available
+        await _profileController?.fetchOrders();
+
         final data = resp.body as Map<String, dynamic>;
         final String createdAt = data['created_at'] ?? '';
         final itemsJson = data['items'] as List<dynamic>;
-        scannedItems = itemsJson
+
+        _scannedItems.value = itemsJson
             .map((j) =>
                 ReceiptItem.fromJson(j as Map<String, dynamic>, createdAt))
             .toList();
-        isLoading = false;
+
+        debugPrint("Loaded ${_scannedItems.length} items for role: $currentRole");
+        _isLoading.value = false;
+        _errorMessage.value = '';
       } else {
-        errorMessage = 'Failed to load receipt: '
+        _errorMessage.value = 'Failed to load receipt: '
             '${resp.statusCode}\n${resp.body}';
-        isLoading = false;
+        _isLoading.value = false;
       }
     } catch (e) {
-      errorMessage = 'Error fetching data: $e';
-      isLoading = false;
+      debugPrint("Error in fetchReceiptAndItems: $e");
+      _errorMessage.value = 'Error fetching data: $e';
+      _isLoading.value = false;
     }
-    notifyListeners();
+
+    // Force UI update after completion
+    update();
+  }
+
+  bool _hasUserSessionChanged(String? currentRole, int? currentUserId) {
+    return _lastUserRole != currentRole || _lastUserId != currentUserId;
+  }
+
+  void _clearAllData() {
+    debugPrint("Clearing all ScannedItemsController data");
+    _scannedItems.clear();
+    _isLoading.value = false;
+    _errorMessage.value = '';
+    _lastUserRole = null;
+    _lastUserId = null;
+    update();
+  }
+
+  Future<void> refreshData() async {
+    await fetchReceiptAndItems();
+  }
+
+  @override
+  void onClose() {
+    debugPrint("ScannedItemsController onClose called");
+    _clearAllData();
+    super.onClose();
   }
 }
