@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:groc_shopy/presentation/screens/home/controller/home_controller.dart';
 import 'package:groc_shopy/utils/logger/logger.dart';
@@ -438,6 +439,146 @@ class AuthController extends GetxController {
       emailController.value.text = savedEmail ?? '';
       passController.value.text = savedPassword ?? '';
       rememberMe.value = true;
+    }
+  }
+
+  ///============================ Google Sign In =========================
+  RxBool googleSignInLoading = false.obs;
+
+  Future<void> signInWithGoogle({required BuildContext context}) async {
+    googleSignInLoading.value = true;
+
+    try {
+      print('=== Google Sign-In Controller Method ===');
+
+      // Google Sign-In configuration
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+        serverClientId:
+            '418880569981-1ibh3bv48t8c8tla9cudp6o5q59elg0i.apps.googleusercontent.com',
+      );
+
+      // Clear any existing sign-in
+      await googleSignIn.signOut();
+
+      // Start the sign-in process
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        print('User cancelled Google Sign-In');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google sign-in was cancelled')),
+        );
+        return;
+      }
+
+      print('SUCCESS: Google User obtained: ${googleUser.email}');
+
+      // Get authentication details
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String? accessToken = googleAuth.accessToken;
+
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('Failed to get access token from Google');
+      }
+
+      // Send access_token to Django backend
+      print('Sending Google token to backend...');
+      var response = await apiClient.post(
+        showResult: true,
+        body: {'access_token': accessToken},
+        isBasic: true,
+        url: 'http://10.0.70.145:8001/dj-rest-auth/google/',
+      );
+
+      print('Backend Response Status: ${response.statusCode}');
+      print('Backend Response Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // FIRST - Clear all app state completely
+        await _resetAppState();
+
+        // SECOND - Clear SharedPreferences
+        await _clearAllUserData();
+
+        // THIRD - Save new user data from Google OAuth response
+        await SharedPrefsHelper.setString(
+            AppConstants.fullName,
+            response.body["full_name"] ??
+                '${response.body["first_name"] ?? ""} ${response.body["last_name"] ?? ""}'
+                    .trim());
+
+        await SharedPrefsHelper.setString(
+            AppConstants.email, response.body["email"] ?? googleUser.email);
+
+        await SharedPrefsHelper.setString(AppConstants.image,
+            response.body["image"]?.toString() ?? googleUser.photoUrl ?? "");
+
+        // Save JWT tokens (same as regular login)
+        await SharedPrefsHelper.setString(
+            AppConstants.token, response.body["access"] ?? "");
+
+        await SharedPrefsHelper.setString(
+            AppConstants.userRole, response.body["role"] ?? "user");
+
+        await SharedPrefsHelper.setString(
+            AppConstants.refresh, response.body["refresh"] ?? "");
+
+        await SharedPrefsHelper.setInt(
+            AppConstants.userID, response.body["id"] ?? 0);
+
+        // Set test flag for Google users
+        await SharedPrefsHelper.setString(
+            "test", response.body["role"] == "admin" ? "admin" : "user");
+
+        debugPrint("Google login successful, navigating to home...");
+        debugPrint("User ID: ${response.body["id"]}");
+        debugPrint("User Role: ${response.body["role"]}");
+
+        // Navigate to home using the same method as regular login
+        AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
+
+        // Show success message
+        final userName = response.body["full_name"] ??
+            '${response.body["first_name"] ?? ""} ${response.body["last_name"] ?? ""}'
+                .trim();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Welcome ${userName.isNotEmpty ? userName : googleUser.displayName ?? 'User'}!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Handle error response using the same method as regular login
+        checkApi(response: response, context: context);
+      }
+    } catch (e) {
+      print('Google Sign-In Error: $e');
+
+      String errorMessage = e.toString();
+      if (errorMessage.contains('network') ||
+          errorMessage.contains('ClientException')) {
+        errorMessage = 'Network error: Please check your connection';
+      } else if (errorMessage.contains('PlatformException')) {
+        errorMessage = 'Google Sign-In not available on this device';
+      } else if (errorMessage.contains('sign_in_canceled')) {
+        errorMessage = 'Sign-in was cancelled';
+      } else {
+        errorMessage = 'Google sign-in failed: Please try again';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      googleSignInLoading.value = false;
+      googleSignInLoading.refresh();
     }
   }
 }

@@ -9,10 +9,16 @@ import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:groc_shopy/utils/app_colors/app_colors.dart';
 import 'package:groc_shopy/utils/static_strings/static_strings.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../helper/local_db/local_db.dart';
 import '../../widgets/custom_bottons/custom_button/app_button.dart';
 import '../../widgets/custom_text_form_field/custom_text_form.dart';
 import 'controller/auth_controller.dart';
+
+// Add these imports for Google Sign-In
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -30,6 +36,7 @@ class AuthScreenState extends State<AuthScreen> {
 
   // UI Constants
   static const double _horizontalPadding = 20;
+
   @override
   void initState() {
     super.initState();
@@ -189,8 +196,6 @@ class AuthScreenState extends State<AuthScreen> {
         _buildRememberMeCheckbox(),
         Gap(33.h),
         _buildSignInButton(() => _authController.signIn(context: context)),
-        // _buildSignInButton(() => context.push(RoutePath.home.addBasePath)),
-        // () => context.push(RoutePath.home.addBasePath)),
         Gap(15.h),
         _buildSignUpOption(context),
       ],
@@ -301,15 +306,18 @@ class AuthScreenState extends State<AuthScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildSocialIcon(
-          iconPath: Assets.icons.appleSignin.path,
-          onTap: _signInWithApple,
-        ),
-        Gap(15.w),
-        _buildSocialIcon(
-          iconPath: Assets.icons.google.path,
-          onTap: _signInWithGoogle,
-        ),
+        Obx(() => _authController.googleSignInLoading.value
+            ? const CircularProgressIndicator()
+            : _buildSocialIcon(
+                iconPath: Assets.icons.google.path, // Add the Google icon path
+                onTap: _signInWithGoogle,
+              )),
+        // Add spacing between buttons if you have multiple social logins
+        // Gap(16.w),
+        // _buildSocialIcon(
+        //   iconPath: Assets.icons.apple.path,
+        //   onTap: _signInWithApple,
+        // ),
       ],
     );
   }
@@ -340,13 +348,42 @@ class AuthScreenState extends State<AuthScreen> {
     });
   }
 
-  void _signInWithApple() async {
-    // Implement Apple sign in
-    final res = await SharedPrefsHelper.getString('test');
-    print(res);
+  void _signInWithApple() async {}
+
+  void _signInWithGoogle() async {
+    await _authController.signInWithGoogle(context: context);
   }
 
-  void _signInWithGoogle() {
-    // Implement Google sign in
+  // Helper method for safer message display
+  void _showMessage(String message, {bool isSuccess = false}) {
+    try {
+      print('Showing message: $message');
+
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+            backgroundColor: isSuccess ? Colors.green : Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      } else {
+        print('Context not available for showing snackbar');
+      }
+    } catch (e) {
+      print('Error showing message: $e');
+      print('Message was: $message');
+    }
   }
 }

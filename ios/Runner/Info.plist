@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>NSCameraUsageDescription</key>
-    <string>Scan your card to add it automatically</string>
-    <key>NSCameraUsageDescription</key>
-    <string>To scan cards</string>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
@@ -43,8 +39,9 @@
     <key>NSPhotoLibraryUsageDescription</key>
     <string>We need access to your photo library to select images for your profile.</string>
 
+    <!-- Fixed: Single NSCameraUsageDescription -->
     <key>NSCameraUsageDescription</key>
-    <string>We need access to your camera to allow taking photos or videos.</string>
+    <string>We need access to your camera to scan cards and take photos.</string>
 
     <key>NSMicrophoneUsageDescription</key>
     <string>We need access to the microphone to record audio in videos.</string>
@@ -61,5 +58,26 @@
     <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
+
+    <!-- Google Sign-In URL Schemes -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>google</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <!-- iOS URL scheme from your iOS Client ID -->
+                <string>com.googleusercontent.apps.418880569981-rhqdotqk52ii81uhp7df0pulslh94ivf</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Add these additional entries to your Info.plist -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
 </dict>
 </plist>

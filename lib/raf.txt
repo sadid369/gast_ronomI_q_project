@@ -609,3 +609,696 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+
+
+
+/////////// auth ///////
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gap/gap.dart';
+import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
+import 'package:groc_shopy/core/custom_assets/assets.gen.dart';
+import 'package:groc_shopy/core/routes/route_path.dart';
+import 'package:groc_shopy/helper/extension/base_extension.dart';
+import 'package:groc_shopy/utils/app_colors/app_colors.dart';
+import 'package:groc_shopy/utils/static_strings/static_strings.dart';
+import 'package:groc_shopy/utils/text_style/text_style.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../helper/local_db/local_db.dart';
+import '../../widgets/custom_bottons/custom_button/app_button.dart';
+import '../../widgets/custom_text_form_field/custom_text_form.dart';
+import 'controller/auth_controller.dart';
+
+// Add these imports for Google Sign-In
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class AuthScreen extends StatefulWidget {
+  const AuthScreen({super.key});
+
+  @override
+  AuthScreenState createState() => AuthScreenState();
+}
+
+class AuthScreenState extends State<AuthScreen> {
+  // Controllers & state variables
+  final AuthController _authController = Get.find<AuthController>();
+  bool _isAdmin = true;
+  bool _rememberMe = false;
+  bool _passwordVisible = false;
+
+  // UI Constants
+  static const double _horizontalPadding = 20;
+
+  @override
+  void initState() {
+    super.initState();
+    _authController.loadSavedCredentials();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Obx(
+        () => SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: _horizontalPadding.w),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildHeader(),
+                    Gap(45.h),
+                    _buildEmailField(),
+                    Gap(35.h),
+                    _buildPasswordField(),
+                    Gap(6.73.h),
+                    _isAdmin
+                        ? _buildAdminOptions(context)
+                        : _buildEmployeeOptions(),
+                    Gap(28.h),
+                    _buildOrDivider(),
+                    Gap(31.h),
+                    _buildSocialSignInOptions(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        _buildLogo(),
+        Gap(15.h),
+        _buildTitle(),
+        Gap(25.h),
+        _buildRoleTabs(),
+      ],
+    );
+  }
+
+  Widget _buildLogo() {
+    return Image.asset(
+      Assets.icons.logo.path,
+      height: 70.h,
+      width: 70.w,
+    );
+  }
+
+  Widget _buildTitle() {
+    return Text(
+      AppStrings.signIn.tr,
+      style: AppStyle.kohSantepheap18w700CFFD673,
+    );
+  }
+
+  Widget _buildRoleTabs() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildRoleTab(AppStrings.employee.tr, !_isAdmin,
+            () => setState(() => _isAdmin = false)),
+        _buildRoleTab(AppStrings.admin.tr, _isAdmin,
+            () => setState(() => _isAdmin = true)),
+      ],
+    );
+  }
+
+  Widget _buildRoleTab(String title, bool selected, VoidCallback onTap) {
+    final color =
+        selected ? AppColors.yellowFFD673 : AppColors.black50opacity80000000;
+    final fontWeight = selected ? FontWeight.bold : FontWeight.normal;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 8.w),
+        width: 175.w,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: AppStyle.inter16w700C80000000.copyWith(
+                fontWeight: fontWeight,
+                color: color,
+              ),
+            ),
+            Gap(12.h),
+            Container(
+              height: selected ? 4.h : 1.h,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmailField() {
+    return CustomTextFormField(
+      controller: _authController.emailController.value,
+      labelText: AppStrings.email.tr,
+      hintText: AppStrings.enterYourEmailHint.tr,
+      suffixIcon: Icons.email_outlined,
+      obscureText: false,
+      hintStyle: AppStyle.roboto14w500CB3B3B3,
+      style: AppStyle.roboto16w500C545454,
+      labelStyle: AppStyle.roboto14w500C000000,
+      enabledBorderColor: AppColors.black30opacity4D000000,
+      focusedBorderColor: AppColors.yellowFFD673,
+      fillColor: Colors.white,
+      contentPadding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return CustomTextFormField(
+      controller: _authController.passController.value,
+      labelText: AppStrings.password.tr,
+      hintText: AppStrings.password.tr,
+      suffixIcon: _passwordVisible
+          ? Icons.visibility_outlined
+          : Icons.visibility_off_outlined,
+      obscureText: !_passwordVisible,
+      onSuffixIconTap: _togglePasswordVisibility,
+      hintStyle: AppStyle.roboto14w500CB3B3B3,
+      style: AppStyle.roboto16w500C545454,
+      labelStyle: AppStyle.roboto14w500C000000,
+      enabledBorderColor: AppColors.black30opacity4D000000,
+      focusedBorderColor: AppColors.yellowFFD673,
+      fillColor: Colors.white,
+      contentPadding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
+    );
+  }
+
+  Widget _buildAdminOptions(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildForgotPasswordLink(context),
+        _buildRememberMeCheckbox(),
+        Gap(33.h),
+        _buildSignInButton(() => _authController.signIn(context: context)),
+        Gap(15.h),
+        _buildSignUpOption(context),
+      ],
+    );
+  }
+
+  Widget _buildForgotPasswordLink(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: () => context.push(RoutePath.forgotPass.addBasePath),
+        child: Text(
+          AppStrings.forgotPassword.tr,
+          style: AppStyle.roboto14w500CFFD673,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmployeeOptions() {
+    return Column(
+      children: [
+        _buildRememberMeCheckbox(),
+        Gap(33.h),
+        _buildSignInButton(
+            () => _authController.employeeSignIn(context: context)),
+      ],
+    );
+  }
+
+  Widget _buildRememberMeCheckbox() {
+    return Obx(() => Row(
+          children: [
+            Checkbox(
+              value: _authController.rememberMe.value,
+              onChanged: (value) =>
+                  _authController.rememberMe.value = value ?? false,
+              activeColor: AppColors.yellowFFD673,
+            ),
+            Text(
+              AppStrings.rememberMe.tr,
+              style: AppStyle.roboto14w400C000000,
+            ),
+          ],
+        ));
+  }
+
+  Widget _buildSignInButton(VoidCallback onPressed) {
+    return AppButton(
+      text: AppStrings.signIn.tr,
+      onPressed: onPressed,
+      width: double.infinity,
+      height: 48.h,
+      backgroundColor: AppColors.yellowFFD673,
+      borderRadius: 8,
+      textStyle: AppStyle.inter16w700CFFFFFF,
+    );
+  }
+
+  Widget _buildSignUpOption(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          AppStrings.dontHaveAAccount.tr,
+          style: AppStyle.roboto14w400C000000,
+        ),
+        GestureDetector(
+          onTap: () => context.push(RoutePath.adminSignUp.addBasePath),
+          child: _buildUnderlinedText(AppStrings.signUp.tr),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUnderlinedText(String text) {
+    return Stack(
+      alignment: Alignment.centerLeft,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(bottom: 2.h),
+          child: Text(
+            text,
+            style: AppStyle.roboto14w500CFFD673,
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 2.h,
+            color: AppColors.yellowFFD673,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrDivider() {
+    return Text(
+      AppStrings.or.tr,
+      style: AppStyle.roboto14w500C80000000,
+    );
+  }
+
+  Widget _buildSocialSignInOptions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildSocialIcon(
+          iconPath: Assets.icons.appleSignin.path,
+          onTap: _signInWithApple,
+        ),
+        Gap(15.w),
+        _buildSocialIcon(
+          iconPath: Assets.icons.google.path,
+          onTap: _signInWithGoogle,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSocialIcon({
+    required String iconPath,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: CircleAvatar(
+        backgroundColor: Colors.transparent,
+        child: Image.asset(iconPath),
+      ),
+    );
+  }
+
+  // Event handlers
+  void _togglePasswordVisibility() {
+    setState(() {
+      _passwordVisible = !_passwordVisible;
+    });
+  }
+
+  void _onRememberMeChanged(bool? value) {
+    setState(() {
+      _rememberMe = value ?? false;
+    });
+  }
+
+  void _signInWithApple() async {}
+
+  void _signInWithGoogle() async {
+    GoogleSignIn? googleSignIn;
+
+    try {
+      print('Starting Google Sign-In...');
+
+      // Show loading indicator using Flutter's showDialog instead of GetX
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Initialize Google Sign-In with your Web Client ID
+      googleSignIn = GoogleSignIn(
+        serverClientId:
+            '418880569981-1ibh3bv48t8c8tla9cudp6o5q59elg0i.apps.googleusercontent.com',
+        scopes: ['email', 'profile', 'openid'],
+      );
+
+      print('GoogleSignIn initialized');
+
+      // Clear any existing sign-in
+      try {
+        await googleSignIn.signOut();
+        print('Previous sign-in cleared');
+      } catch (e) {
+        print('Error clearing previous sign-in: $e');
+      }
+
+      // Start the sign-in process
+      print('Starting sign-in process...');
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      // Close loading dialog safely
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      if (googleUser == null) {
+        print('User cancelled Google Sign-In');
+        _showMessage('Google sign-in was cancelled');
+        return;
+      }
+
+      print('Google User obtained: ${googleUser.email}');
+
+      // Get authentication details
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String? accessToken = googleAuth.accessToken;
+      final String? idToken = googleAuth.idToken;
+
+      print('Access Token available: ${accessToken != null}');
+      print('ID Token available: ${idToken != null}');
+
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('Failed to get access token from Google');
+      }
+
+      print('=== Google Sign-In Success ===');
+      print('User: ${googleUser.displayName ?? 'Unknown'}');
+      print('Email: ${googleUser.email ?? 'Unknown'}');
+
+      // Safe access token logging
+      final tokenPreview = accessToken.length > 20
+          ? '${accessToken.substring(0, 20)}...'
+          : accessToken;
+      print('Access Token: $tokenPreview');
+
+      // Show loading for backend request
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      try {
+        // Send token to Django backend
+        print('Sending request to backend...');
+        final response = await http.post(
+          Uri.parse('http://10.0.70.145:8001/dj-rest-auth/google/'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode({
+            'access_token': accessToken,
+            if (idToken != null && idToken.isNotEmpty) 'id_token': idToken,
+          }),
+        );
+
+        // Close loading dialog
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+
+        print('Backend Response Status: ${response.statusCode}');
+        print('Backend Response Body: ${response.body}');
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final responseData =
+              jsonDecode(response.body) as Map<String, dynamic>;
+
+          // Look for authentication token
+          final String? authToken = responseData['key'] as String? ??
+              responseData['access_token'] as String? ??
+              responseData['token'] as String? ??
+              responseData['auth_token'] as String?;
+
+          print('Auth token found: ${authToken != null}');
+
+          if (authToken != null && authToken.isNotEmpty) {
+            // Save user data
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('auth_token', authToken);
+            await prefs.setString('user_email', googleUser.email);
+            await prefs.setString('user_name', googleUser.displayName ?? '');
+            await prefs.setString('user_photo', googleUser.photoUrl ?? '');
+            await prefs.setBool('is_logged_in', true);
+
+            print('User data saved successfully');
+
+            // Navigate to home
+            if (mounted && context.mounted) {
+              context.push(RoutePath.home.addBasePath);
+              print('Navigation to home successful');
+            }
+
+            // Show success message
+            _showMessage('Welcome ${googleUser.displayName ?? 'User'}!',
+                isSuccess: true);
+          } else {
+            throw Exception(
+                'No valid authentication token received from server');
+          }
+        } else {
+          String errorMessage =
+              'Authentication failed (${response.statusCode})';
+          try {
+            final errorData = jsonDecode(response.body) as Map<String, dynamic>;
+            errorMessage = errorData['error']?.toString() ??
+                errorData['detail']?.toString() ??
+                errorData['message']?.toString() ??
+                errorMessage;
+          } catch (parseError) {
+            print('Error parsing error response: $parseError');
+          }
+          throw Exception(errorMessage);
+        }
+      } catch (e) {
+        // Close loading dialog if still open
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        rethrow;
+      }
+    } catch (e) {
+      print('Google Sign-In Error: $e');
+
+      // Ensure all dialogs are closed
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      String errorMessage = e.toString();
+      if (errorMessage.contains('network') ||
+          errorMessage.contains('ClientException')) {
+        errorMessage = 'Network error: Please check your connection';
+      } else if (errorMessage.contains('PlatformException')) {
+        errorMessage = 'Google Sign-In not available on this device';
+      } else {
+        errorMessage = 'Sign-in failed: Please try again';
+      }
+
+      _showMessage('Sign In Failed: $errorMessage', isSuccess: false);
+    }
+  }
+
+  // Helper method for safer message display
+  void _showMessage(String message, {bool isSuccess = false}) {
+    try {
+      print('Showing message: $message');
+
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+            backgroundColor: isSuccess ? Colors.green : Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      } else {
+        print('Context not available for showing snackbar');
+      }
+    } catch (e) {
+      print('Error showing message: $e');
+      print('Message was: $message');
+    }
+  }
+}
+
+
+//// ///////////////
+import Flutter
+import UIKit
+import GoogleSignIn
+
+@main
+@objc class AppDelegate: FlutterAppDelegate {
+  override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    
+    // Configure Google Sign-In with your iOS Client ID
+    let clientId = "418880569981-rhqdotqk52ii81uhp7df0pulslh94ivf.apps.googleusercontent.com"
+    
+    // Validate client ID is not empty
+    if !clientId.isEmpty {
+      let config = GIDConfiguration(clientID: clientId)
+      GIDSignIn.sharedInstance.configuration = config
+      print("Google Sign-In configured successfully")
+    } else {
+      print("Error: Google Sign-In Client ID is empty")
+    }
+    
+    GeneratedPluginRegistrant.register(with: self)
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+  
+  override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+    if GIDSignIn.sharedInstance.handle(url) {
+      return true
+    }
+    
+    return super.application(app, open: url, options: options)
+  }
+}
+
+/////
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
+    <key>CFBundleDisplayName</key>
+    <string>GastRonomIQ</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>GastRonomIQ</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(FLUTTER_BUILD_NAME)</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleVersion</key>
+    <string>$(FLUTTER_BUILD_NUMBER)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to your photo library to select images for your profile.</string>
+
+    <!-- Fixed: Single NSCameraUsageDescription -->
+    <key>NSCameraUsageDescription</key>
+    <string>We need access to your camera to scan cards and take photos.</string>
+
+    <key>NSMicrophoneUsageDescription</key>
+    <string>We need access to the microphone to record audio in videos.</string>
+
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <key>CADisableMinimumFrameDurationOnPhone</key>
+    <true/>
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
+
+    <!-- Google Sign-In URL Schemes -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>google</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <!-- iOS URL scheme from your iOS Client ID -->
+                <string>com.googleusercontent.apps.418880569981-rhqdotqk52ii81uhp7df0pulslh94ivf</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>
+
+///
