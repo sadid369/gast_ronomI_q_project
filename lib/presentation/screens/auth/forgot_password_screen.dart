@@ -26,107 +26,128 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController =
       TextEditingController(text: kDebugMode ? "sadid.jones@gmail.com" : "");
   final AuthController _authController = Get.find<AuthController>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isButtonEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    // show/hide loader
-    _onEmailChanged(_authController.emailController.value.text);
+    // Initialize with current email value
+    _onEmailChanged(_emailController.text);
+    // Add listener to email controller
+    _emailController.addListener(_onEmailControllerChanged);
   }
 
-// sadid.jones@gmail.com
   @override
   void dispose() {
+    _emailController.removeListener(_onEmailControllerChanged);
     _emailController.dispose();
     super.dispose();
   }
 
+  void _onEmailControllerChanged() {
+    _onEmailChanged(_emailController.text);
+  }
+
   void _onEmailChanged(String value) {
-    final isNotEmpty = value.trim().isNotEmpty;
-    if (isNotEmpty != _isButtonEnabled) {
-      setState(() => _isButtonEnabled = isNotEmpty);
+    final isValid = _validateEmail(value) == null && value.trim().isNotEmpty;
+    if (isValid != _isButtonEnabled) {
+      setState(() => _isButtonEnabled = isValid);
     }
   }
 
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return AppStrings.emailRequired.tr;
+    }
+    if (!AppStrings.emailRegexp.hasMatch(value.trim())) {
+      return AppStrings.enterValidEmail.tr;
+    }
+    return null;
+  }
+
   void _onSubmit() {
-    _authController.sendResetOtp(
-      context: context,
-      email: _emailController.text.trim(),
-    );
-    // context.push(RoutePath.verification.addBasePath);
+    if (_formKey.currentState!.validate()) {
+      _authController.sendResetOtp(
+        context: context,
+        email: _emailController.text.trim(),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Obx(() => SafeArea(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 30).w,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: Image.asset(Assets.icons.arrowBackGrey.path),
-                  ),
-                  const SizedBox(height: 30),
-                  Text(
-                    AppStrings.forgotPassword.tr,
-                    style: AppStyle.kohSantepheap18w700C1E1E1E,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    AppStrings.pleaseEnterYourEmailToReset.tr,
-                    style: AppStyle.roboto14w600C989898,
-                  ),
-                  const Gap(20),
-                  Text(
-                    AppStrings.youEmail.tr,
-                    style: AppStyle.roboto16w600C2A2A2A,
-                  ),
-                  const SizedBox(height: 8),
-                  CustomTextFormField(
-                    controller: _authController.emailController.value,
-                    onChanged: _onEmailChanged,
-                    hintText: AppStrings.enterYourEmailHint.tr,
-                    keyboardType: TextInputType.emailAddress,
-                    style: AppStyle.roboto16w500C545454,
-                    hintStyle: AppStyle.roboto14w500CB3B3B3,
-                    fillColor: Colors.transparent,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                    enabledBorderColor: AppColors.borderE1E1E1,
-                    focusedBorderColor: AppColors.yellowFFD673,
-                    enabledBorderWidth: 1.5.w,
-                    focusedBorderWidth: 1.8.w,
-                    borderRadius: BorderRadius.circular(12.dg),
-                    filled: true,
-                    obscureText: false,
-                  ),
-                  Gap(30.h),
-                  AppButton(
-                    isLoading: _authController.resetOtpLoading.value,
-                    text: AppStrings.passwordReset.tr,
-                    onPressed: _isButtonEnabled &&
-                            !_authController.resetOtpLoading.value
-                        ? _onSubmit
-                        : null,
-                    enabled: _isButtonEnabled &&
-                        !_authController.resetOtpLoading.value,
-                    width: double.infinity,
-                    height: 48.h,
-                    backgroundColor: AppColors.yellowFFD673,
-                    disabledBackgroundColor:
-                        AppColors.yellowFFD673.withOpacity(0.4),
-                    borderRadius: 10,
-                    textStyle: AppStyle.inter16w700CFFFFFF,
-                  ),
-                ],
-              ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30).w,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Image.asset(Assets.icons.arrowBackGrey.path),
+                ),
+                const SizedBox(height: 30),
+                Text(
+                  AppStrings.forgotPassword.tr,
+                  style: AppStyle.kohSantepheap18w700C1E1E1E,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  AppStrings.pleaseEnterYourEmailToReset.tr,
+                  style: AppStyle.roboto14w600C989898,
+                ),
+                const Gap(20),
+                Text(
+                  AppStrings.youEmail.tr,
+                  style: AppStyle.roboto16w600C2A2A2A,
+                ),
+                const SizedBox(height: 8),
+                CustomTextFormField(
+                  controller: _emailController,
+                  onChanged: _onEmailChanged,
+                  validator: _validateEmail,
+                  hintText: AppStrings.enterYourEmailHint.tr,
+                  keyboardType: TextInputType.emailAddress,
+                  style: AppStyle.roboto16w500C545454,
+                  hintStyle: AppStyle.roboto14w500CB3B3B3,
+                  fillColor: Colors.transparent,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                  enabledBorderColor: AppColors.borderE1E1E1,
+                  focusedBorderColor: AppColors.yellowFFD673,
+                  enabledBorderWidth: 1.5.w,
+                  focusedBorderWidth: 1.8.w,
+                  borderRadius: BorderRadius.circular(12.dg),
+                  filled: true,
+                  obscureText: false,
+                ),
+                Gap(30.h),
+                Obx(() => AppButton(
+                      isLoading: _authController.resetOtpLoading.value,
+                      text: AppStrings.passwordReset.tr,
+                      onPressed: _isButtonEnabled &&
+                              !_authController.resetOtpLoading.value
+                          ? _onSubmit
+                          : null,
+                      enabled: _isButtonEnabled &&
+                          !_authController.resetOtpLoading.value,
+                      width: double.infinity,
+                      height: 48.h,
+                      backgroundColor: AppColors.yellowFFD673,
+                      disabledBackgroundColor:
+                          AppColors.yellowFFD673.withOpacity(0.4),
+                      borderRadius: 10,
+                      textStyle: AppStyle.inter16w700CFFFFFF,
+                    )),
+              ],
             ),
-          )),
+          ),
+        ),
+      ),
     );
   }
 }

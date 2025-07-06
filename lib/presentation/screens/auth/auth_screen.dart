@@ -14,6 +14,7 @@ import '../../../helper/local_db/local_db.dart';
 import '../../widgets/custom_bottons/custom_button/app_button.dart';
 import '../../widgets/custom_text_form_field/custom_text_form.dart';
 import 'controller/auth_controller.dart';
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 
 // Add these imports for Google Sign-In
 import 'package:google_sign_in/google_sign_in.dart';
@@ -28,10 +29,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class AuthScreenState extends State<AuthScreen> {
-  // Controllers & state variables
   final AuthController _authController = Get.find<AuthController>();
   bool _isAdmin = true;
-  bool _rememberMe = false;
   bool _passwordVisible = false;
 
   // UI Constants
@@ -46,12 +45,13 @@ class AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Obx(
-        () => SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: _horizontalPadding.w),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: _horizontalPadding.w),
+              child: Form(
+                key: _authController.signInFormKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -64,10 +64,13 @@ class AuthScreenState extends State<AuthScreen> {
                     _isAdmin
                         ? _buildAdminOptions(context)
                         : _buildEmployeeOptions(),
-                    Gap(28.h),
-                    _buildOrDivider(),
-                    Gap(31.h),
-                    _buildSocialSignInOptions(),
+                    // Only show social options for admin
+                    if (_isAdmin) ...[
+                      Gap(28.h),
+                      _buildOrDivider(),
+                      Gap(31.h),
+                      _buildSocialSignInOptions(),
+                    ],
                   ],
                 ),
               ),
@@ -153,11 +156,12 @@ class AuthScreenState extends State<AuthScreen> {
 
   Widget _buildEmailField() {
     return CustomTextFormField(
-      controller: _authController.emailController.value,
+      controller: _authController.emailController, // Remove .value
       labelText: AppStrings.email.tr,
       hintText: AppStrings.enterYourEmailHint.tr,
       suffixIcon: Icons.email_outlined,
       obscureText: false,
+      validator: _authController.validateEmail,
       hintStyle: AppStyle.roboto14w500CB3B3B3,
       style: AppStyle.roboto16w500C545454,
       labelStyle: AppStyle.roboto14w500C000000,
@@ -169,23 +173,24 @@ class AuthScreenState extends State<AuthScreen> {
   }
 
   Widget _buildPasswordField() {
-    return CustomTextFormField(
-      controller: _authController.passController.value,
-      labelText: AppStrings.password.tr,
-      hintText: AppStrings.password.tr,
-      suffixIcon: _passwordVisible
-          ? Icons.visibility_outlined
-          : Icons.visibility_off_outlined,
-      obscureText: !_passwordVisible,
-      onSuffixIconTap: _togglePasswordVisibility,
-      hintStyle: AppStyle.roboto14w500CB3B3B3,
-      style: AppStyle.roboto16w500C545454,
-      labelStyle: AppStyle.roboto14w500C000000,
-      enabledBorderColor: AppColors.black30opacity4D000000,
-      focusedBorderColor: AppColors.yellowFFD673,
-      fillColor: Colors.white,
-      contentPadding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
-    );
+    return Obx(() => CustomTextFormField(
+          controller: _authController.passController, // Remove .value
+          labelText: AppStrings.password.tr,
+          hintText: AppStrings.password.tr,
+          suffixIcon: _authController.passwordVisible.value
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined,
+          obscureText: !_authController.passwordVisible.value,
+          onSuffixIconTap: _authController.togglePasswordVisibility,
+          validator: _authController.validatePassword,
+          hintStyle: AppStyle.roboto14w500CB3B3B3,
+          style: AppStyle.roboto16w500C545454,
+          labelStyle: AppStyle.roboto14w500C000000,
+          enabledBorderColor: AppColors.black30opacity4D000000,
+          focusedBorderColor: AppColors.yellowFFD673,
+          fillColor: Colors.white,
+          contentPadding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
+        ));
   }
 
   Widget _buildAdminOptions(BuildContext context) {
@@ -244,15 +249,22 @@ class AuthScreenState extends State<AuthScreen> {
   }
 
   Widget _buildSignInButton(VoidCallback onPressed) {
-    return AppButton(
-      text: AppStrings.signIn.tr,
-      onPressed: onPressed,
-      width: double.infinity,
-      height: 48.h,
-      backgroundColor: AppColors.yellowFFD673,
-      borderRadius: 8,
-      textStyle: AppStyle.inter16w700CFFFFFF,
-    );
+    return Obx(() => AppButton(
+          text: AppStrings.signIn.tr,
+          onPressed: _isAdmin
+              ? (_authController.signInLoading.value ? null : onPressed)
+              : (_authController.employeeSignInLoading.value
+                  ? null
+                  : onPressed),
+          width: double.infinity,
+          height: 48.h,
+          backgroundColor: AppColors.yellowFFD673,
+          borderRadius: 8,
+          textStyle: AppStyle.inter16w700CFFFFFF,
+          isLoading: _isAdmin
+              ? _authController.signInLoading.value
+              : _authController.employeeSignInLoading.value,
+        ));
   }
 
   Widget _buildSignUpOption(BuildContext context) {
@@ -307,17 +319,14 @@ class AuthScreenState extends State<AuthScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Obx(() => _authController.googleSignInLoading.value
-            ? const CircularProgressIndicator()
+            ? const CircularProgressIndicator(
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.yellowFFD673),
+              )
             : _buildSocialIcon(
-                iconPath: Assets.icons.google.path, // Add the Google icon path
+                iconPath: Assets.icons.google.path,
                 onTap: _signInWithGoogle,
               )),
-        // Add spacing between buttons if you have multiple social logins
-        // Gap(16.w),
-        // _buildSocialIcon(
-        //   iconPath: Assets.icons.apple.path,
-        //   onTap: _signInWithApple,
-        // ),
       ],
     );
   }
@@ -339,12 +348,6 @@ class AuthScreenState extends State<AuthScreen> {
   void _togglePasswordVisibility() {
     setState(() {
       _passwordVisible = !_passwordVisible;
-    });
-  }
-
-  void _onRememberMeChanged(bool? value) {
-    setState(() {
-      _rememberMe = value ?? false;
     });
   }
 

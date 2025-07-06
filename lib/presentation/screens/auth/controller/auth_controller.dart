@@ -6,6 +6,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:groc_shopy/helper/extension/base_extension.dart';
 import 'package:groc_shopy/presentation/screens/home/controller/home_controller.dart';
 import 'package:groc_shopy/utils/logger/logger.dart';
+// Updated import
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 
 import '../../../../core/routes/route_path.dart';
 import '../../../../core/routes/routes.dart';
@@ -22,31 +24,139 @@ import '../../scannedItemsScreen/controller/scanned_items_controller.dart';
 import '../../transaction_history/controller/transaction_history_controller.dart';
 
 class AuthController extends GetxController {
-  // Rx<TextEditingController> fullNameController =
-  //     TextEditingController(text: kDebugMode ? "Sadid" : "").obs;
-  // Rx<TextEditingController> emailController =
-  //     TextEditingController(text: kDebugMode ? "sadid.jones@gmail.com" : "")
-  //         .obs;
-  // Rx<TextEditingController> passController =
-  //     TextEditingController(text: kDebugMode ? "123456Er" : "").obs;
-  // Rx<TextEditingController> confirmController =
-  //     TextEditingController(text: kDebugMode ? "123456Er" : "").obs;
-  Rx<TextEditingController> fullNameController = TextEditingController().obs;
-  Rx<TextEditingController> emailController =
-      TextEditingController(text: "sadid.jones@gmail.com").obs;
-  Rx<TextEditingController> passController =
-      TextEditingController(text: "123456Er").obs;
-  Rx<TextEditingController> confirmController =
-      TextEditingController(text: "123456Er").obs;
+  // Text Controllers - Remove Rx wrapper to prevent disposal issues
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController emailController =
+      TextEditingController(text: "sadid.jones@gmail.com");
+  final TextEditingController passController =
+      TextEditingController(text: "123456Er");
+  final TextEditingController confirmController =
+      TextEditingController(text: "123456Er");
+  final TextEditingController otpController = TextEditingController();
 
-  Rx<TextEditingController> otpController = TextEditingController().obs;
+  // Form Keys for validation
+  final GlobalKey<FormState> signUpFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> signInFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> forgotPasswordFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> setPasswordFormKey = GlobalKey<FormState>();
 
+  // Observable variables
   Rx<bool> rememberMe = false.obs;
   Rx<bool> isAgree = false.obs;
   Rx<bool> isClient = true.obs;
+  Rx<bool> passwordVisible = false.obs;
+  Rx<bool> confirmPasswordVisible = false.obs;
+
+  // Loading states
+  RxBool signInLoading = false.obs;
+  RxBool employeeSignInLoading = false.obs;
+  RxBool signUpLoading = false.obs;
+  RxBool verifyLoading = false.obs;
+  RxBool resetOtpLoading = false.obs;
+  RxBool verifyResetOtpLoading = false.obs;
+  RxBool setNewPasswordLoading = false.obs;
+  RxBool googleSignInLoading = false.obs;
 
   ApiClient apiClient = serviceLocator();
-  final HomeController homeController = Get.find<HomeController>();
+  bool _isDisposed = false; // Add disposal tracking
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadSavedCredentials();
+  }
+
+  @override
+  void onClose() {
+    _isDisposed = true;
+    try {
+      fullNameController.dispose();
+      emailController.dispose();
+      passController.dispose();
+      confirmController.dispose();
+      otpController.dispose();
+    } catch (e) {
+      debugPrint("Error disposing controllers: $e");
+    }
+    super.onClose();
+  }
+
+  // Toggle password visibility
+  void togglePasswordVisibility() {
+    if (!_isDisposed) {
+      passwordVisible.value = !passwordVisible.value;
+    }
+  }
+
+  void toggleConfirmPasswordVisibility() {
+    if (!_isDisposed) {
+      confirmPasswordVisible.value = !confirmPasswordVisible.value;
+    }
+  }
+
+  // Validation methods
+  String? validateFullName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return AppStrings.fullNameRequired.tr;
+    }
+    if (value.trim().length < 2) {
+      return AppStrings.fullNameMinLength.tr;
+    }
+    return null;
+  }
+
+  String? validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return AppStrings.emailRequired.tr;
+    }
+    if (!AppStrings.emailRegexp.hasMatch(value.trim())) {
+      return AppStrings.enterValidEmail.tr;
+    }
+    return null;
+  }
+
+  String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return AppStrings.passwordRequired.tr;
+    }
+    if (!AppStrings.passwordRegex.hasMatch(value)) {
+      return AppStrings.passWordMustBeAtLeast.tr;
+    }
+    return null;
+  }
+
+  String? validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return AppStrings.confirmPasswordRequired.tr;
+    }
+    if (value != passController.text) {
+      return AppStrings.passwordsDoNotMatch.tr;
+    }
+    return null;
+  }
+
+  // Show awesome snackbar using awesome_snackbar_content package
+  void _showAwesomeSnackbar(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required ContentType contentType,
+  }) {
+    final snackBar = SnackBar(
+      elevation: 0,
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      content: AwesomeSnackbarContent(
+        title: title,
+        message: message,
+        contentType: contentType,
+      ),
+    );
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(snackBar);
+  }
 
   /// =================== Save Info ===================
   String cleanUrl(String? url) {
@@ -55,10 +165,6 @@ class AuthController extends GetxController {
   }
 
   saveInformation({required Response<dynamic> response}) {
-    // dbHelper.storeTokenUserdata(
-    //     token: response.body["data"]["accessToken"],
-    //     role: response.body["data"]["role"]);
-
     SharedPrefsHelper.setString(
         AppConstants.token, response.body["data"]["accessToken"]);
     SharedPrefsHelper.setString(
@@ -66,15 +172,26 @@ class AuthController extends GetxController {
   }
 
   ///============================ Sign In =========================
-  RxBool signInLoading = false.obs;
-
   signIn({required BuildContext context}) async {
+    if (signInLoading.value) return;
+
+    if (!signInFormKey.currentState!.validate()) {
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.validationError.tr,
+        message: AppStrings.pleaseFixErrors.tr,
+        contentType: ContentType.failure,
+      );
+      return;
+    }
+
     signInLoading.value = true;
 
     var body = {
-      "email": emailController.value.text,
-      "password": passController.value.text
+      "email": emailController.text.trim(),
+      "password": passController.text
     };
+
     var response = await apiClient.post(
       showResult: true,
       body: body,
@@ -83,13 +200,8 @@ class AuthController extends GetxController {
     );
 
     if (response.statusCode == 200) {
-      // FIRST - Clear all app state completely
-      await _resetAppState();
-
-      // SECOND - Clear SharedPreferences
       await _clearAllUserData();
 
-      // THIRD - Save new user data
       await SharedPrefsHelper.setString(
           AppConstants.fullName, response.body["full_name"] ?? "");
       await SharedPrefsHelper.setString(
@@ -106,12 +218,11 @@ class AuthController extends GetxController {
       await SharedPrefsHelper.setInt(
           AppConstants.userID, response.body["id"] ?? 0);
 
-      // Save credentials if rememberMe is true
       if (rememberMe.value) {
         await SharedPrefsHelper.setString(
-            AppConstants.savedEmail, emailController.value.text);
+            AppConstants.savedEmail, emailController.text);
         await SharedPrefsHelper.setString(
-            AppConstants.savedPassword, passController.value.text);
+            AppConstants.savedPassword, passController.text);
         await SharedPrefsHelper.setBool(AppConstants.rememberMe, true);
       } else {
         await SharedPrefsHelper.remove(AppConstants.savedEmail);
@@ -119,25 +230,44 @@ class AuthController extends GetxController {
         await SharedPrefsHelper.setBool(AppConstants.rememberMe, false);
       }
 
-      debugPrint("Admin login successful, navigating to home...");
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.welcomeTitle.tr,
+        message: AppStrings.adminLoginSuccessful.tr,
+        contentType: ContentType.success,
+      );
+
+      // Use delay to allow snackbar to show before navigation
+      await Future.delayed(const Duration(milliseconds: 500));
       AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
     } else {
-      // ignore: use_build_context_synchronously
       checkApi(response: response, context: context);
     }
 
     signInLoading.value = false;
-    signInLoading.refresh();
   }
 
-  RxBool employeeSignInLoading = false.obs;
+  ///============================ Employee Sign In =========================
   Future<void> employeeSignIn({required BuildContext context}) async {
+    if (employeeSignInLoading.value) return;
+
+    if (!signInFormKey.currentState!.validate()) {
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.validationError.tr,
+        message: AppStrings.pleaseFixErrors.tr,
+        contentType: ContentType.failure,
+      );
+      return;
+    }
+
     employeeSignInLoading.value = true;
 
     var body = {
-      "email": emailController.value.text,
-      "password": passController.value.text
+      "email": emailController.text.trim(),
+      "password": passController.text
     };
+
     var response = await apiClient.post(
       showResult: true,
       body: body,
@@ -146,13 +276,8 @@ class AuthController extends GetxController {
     );
 
     if (response.statusCode == 200) {
-      // FIRST - Clear all app state completely
-      await _resetAppState();
-
-      // SECOND - Clear SharedPreferences
       await _clearAllUserData();
 
-      // THIRD - Save new user data
       await SharedPrefsHelper.setString(
           AppConstants.fullName, response.body["name"] ?? "");
       await SharedPrefsHelper.setString(
@@ -172,12 +297,11 @@ class AuthController extends GetxController {
       await SharedPrefsHelper.setString(
           AppConstants.image, response.body["image"]?.toString() ?? "");
 
-      // Save credentials if rememberMe is true
       if (rememberMe.value) {
         await SharedPrefsHelper.setString(
-            AppConstants.savedEmail, emailController.value.text);
+            AppConstants.savedEmail, emailController.text);
         await SharedPrefsHelper.setString(
-            AppConstants.savedPassword, passController.value.text);
+            AppConstants.savedPassword, passController.text);
         await SharedPrefsHelper.setBool(AppConstants.rememberMe, true);
       } else {
         await SharedPrefsHelper.remove(AppConstants.savedEmail);
@@ -185,47 +309,60 @@ class AuthController extends GetxController {
         await SharedPrefsHelper.setBool(AppConstants.rememberMe, false);
       }
 
-      debugPrint("Employee login successful, navigating to home...");
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.welcomeTitle.tr,
+        message: AppStrings.userLoginSuccessful.tr,
+        contentType: ContentType.success,
+      );
+
+      await Future.delayed(const Duration(milliseconds: 500));
       context.pushReplacement(RoutePath.home.addBasePath);
     } else {
       checkApi(response: response, context: context);
     }
 
     employeeSignInLoading.value = false;
-    employeeSignInLoading.refresh();
   }
 
   ///============================ Sign Up =========================
-  RxBool signUpLoading = false.obs;
-
   signup({required BuildContext context}) async {
-    signUpLoading.value = true;
+    if (signUpLoading.value) return;
 
-    // Create a User object using the controllers' text values
-    User user = User(
-      email: emailController.value.text,
-      password: passController.value.text,
-      rePassword: confirmController.value.text,
-      fullName: fullNameController.value.text,
-    );
-
-    // Validate the user data using the validate method
-    String validationMessage = user.validate();
-
-    if (validationMessage != 'User data is valid') {
-      // Show validation error (e.g., using a snackbar, dialog, etc.)
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(validationMessage)),
+    if (!signUpFormKey.currentState!.validate()) {
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.validationError.tr,
+        message: AppStrings.pleaseFixErrors.tr,
+        contentType: ContentType.failure,
       );
-      signUpLoading.value = false;
-      signUpLoading.refresh();
       return;
     }
 
-    // If validation is successful, prepare the body for the API request
+    signUpLoading.value = true;
+
+    User user = User(
+      email: emailController.text.trim(), // Remove .value
+      password: passController.text, // Remove .value
+      rePassword: confirmController.text, // Remove .value
+      fullName: fullNameController.text.trim(), // Remove .value
+    );
+
+    String validationMessage = user.validate();
+
+    if (validationMessage != 'User data is valid') {
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.validationError.tr,
+        message: validationMessage,
+        contentType: ContentType.failure,
+      );
+      signUpLoading.value = false;
+      return;
+    }
+
     var body = user.toJson();
 
-    // Send the API request
     var response = await apiClient.post(
       body: body,
       isBasic: true,
@@ -233,46 +370,70 @@ class AuthController extends GetxController {
     );
 
     if (response.statusCode == 201) {
-      // Redirect to login screen upon successful sign-in
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.success.tr,
+        message: AppStrings.accountCreatedSuccessfully.tr,
+        contentType: ContentType.success,
+      );
       context.push(RoutePath.auth.addBasePath);
     } else {
       checkApi(response: response, context: context);
     }
 
     signUpLoading.value = false;
-    signUpLoading.refresh();
   }
 
-  /// ====================== signUpOtpVarify ========================
-  RxBool verifyLoading = false.obs;
-
-  RxBool resetOtpLoading = false.obs;
-
+  ///============================ Reset Password =========================
   Future<void> sendResetOtp({
     required BuildContext context,
     required String email,
   }) async {
+    if (resetOtpLoading.value) return;
+
+    // Validate email
+    if (email.trim().isEmpty) {
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.validationError.tr,
+        message: AppStrings.emailRequired.tr,
+        contentType: ContentType.warning,
+      );
+      return;
+    }
+
+    if (!AppStrings.emailRegexp.hasMatch(email.trim())) {
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.validationError.tr,
+        message: AppStrings.enterValidEmail.tr,
+        contentType: ContentType.warning,
+      );
+      return;
+    }
+
     resetOtpLoading.value = true;
-    var body = {"email": email};
+    var body = {"email": email.trim()};
     var response = await apiClient.post(
       showResult: true,
       body: body,
       isBasic: true,
-      // url: '/user/api/v1/send-reset-otp/'.addBaseUrl,
       url: ApiUrl.sendResetOtp.addBaseUrl,
-      // url: "http://10.0.70.145:8001/user/api/v1/send-reset-otp/",
     );
     resetOtpLoading.value = false;
 
     if (response.statusCode == 200) {
-      // on success navigate to verification screen
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.success.tr,
+        message: AppStrings.passwordResetLinkSent.tr,
+        contentType: ContentType.success,
+      );
       context.push(RoutePath.verification.addBasePath);
     } else {
       checkApi(response: response, context: context);
     }
   }
-
-  RxBool verifyResetOtpLoading = false.obs;
 
   Future<void> verifyResetOtp({
     required BuildContext context,
@@ -286,22 +447,17 @@ class AuthController extends GetxController {
       body: body,
       isBasic: true,
       url: ApiUrl.verifyResetOtp.addBaseUrl,
-      // url: "http://10.0.70.145:8001/user/api/v1/verify-reset-otp/",
     );
     verifyResetOtpLoading.value = false;
 
     if (response.statusCode == 200) {
       final resetToken = response.body["reset_token"];
-      // save token in shared prefs
       await SharedPrefsHelper.setString(AppConstants.resetToken, resetToken);
-      // navigate without passing extra
       context.push(RoutePath.resetPassConfirm.addBasePath);
     } else {
       checkApi(response: response, context: context);
     }
   }
-
-  RxBool setNewPasswordLoading = false.obs;
 
   Future<void> setNewPasswordAfterOtp({
     required BuildContext context,
@@ -309,6 +465,18 @@ class AuthController extends GetxController {
     required String newPassword,
     required String confirmPassword,
   }) async {
+    if (setNewPasswordLoading.value) return;
+
+    if (!setPasswordFormKey.currentState!.validate()) {
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.validationError.tr,
+        message: AppStrings.pleaseFixErrors.tr,
+        contentType: ContentType.failure,
+      );
+      return;
+    }
+
     setNewPasswordLoading.value = true;
     final body = {
       "reset_token": resetToken,
@@ -321,19 +489,17 @@ class AuthController extends GetxController {
       body: body,
       isBasic: true,
       url: ApiUrl.setNewPasswordAfterOtp.addBaseUrl,
-      // url: "http://10.0.70.145:8001/user/api/v1/set-new-password-after-otp/",
     );
 
     setNewPasswordLoading.value = false;
 
     if (response.statusCode == 200) {
-      // clear the stored reset token
       await SharedPrefsHelper.remove(AppConstants.resetToken);
-      // Show success and navigate to success screen
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text(response.body["message"] ?? "Password reset successful")),
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.success.tr,
+        message: response.body["message"] ?? "Password reset successful",
+        contentType: ContentType.success,
       );
       context.push(RoutePath.resetPasswordSuccess.addBasePath);
     } else {
@@ -341,44 +507,37 @@ class AuthController extends GetxController {
     }
   }
 
+  ///============================ Logout =========================
   Future<void> logout({required BuildContext context}) async {
-    // Get tokens from shared preferences
     final refreshToken =
         await SharedPrefsHelper.getString(AppConstants.refresh);
 
     if (refreshToken != null && refreshToken.isNotEmpty) {
-      // Call the logout API
       final response = await apiClient.post(
-        url: "http://10.0.70.145:8001/user/logout/",
+        url: ApiUrl.logout.addBaseUrl,
         body: {"refresh": refreshToken},
         isBasic: false,
         showResult: true,
       );
 
       if (response.statusCode == 205) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(response.body["detail"] ?? "Logout successful.")),
+        _showAwesomeSnackbar(
+          context,
+          title: AppStrings.success.tr,
+          message: response.body["detail"] ?? "Logout successful.",
+          contentType: ContentType.success,
         );
       } else {
         checkApi(response: response, context: context);
       }
     }
 
-    // Clear all app state completely
-    await _resetAppState();
-
-    // Clear saved user data from SharedPreferences
     await _clearAllUserData();
-
-    // Navigate to login (replace the entire stack)
     context.pushReplacement(RoutePath.auth.addBasePath);
   }
 
-  // Add method to clear all user data
   Future<void> _clearAllUserData() async {
     try {
-      // Clear all user-related data
       await SharedPrefsHelper.remove(AppConstants.token);
       await SharedPrefsHelper.remove(AppConstants.userRole);
       await SharedPrefsHelper.remove(AppConstants.fullName);
@@ -396,37 +555,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // Enhanced method to properly reset app state
-  Future<void> _resetAppState() async {
-    try {
-      debugPrint("Starting complete app state reset...");
-
-      // Force delete ALL GetX controllers to ensure clean state
-      Get.deleteAll(force: true);
-
-      // Wait for cleanup
-      await Future.delayed(Duration(milliseconds: 300));
-
-      // Manually clear any persistent data that might be cached
-      await _clearPersistentCache();
-
-      debugPrint("Complete app state reset completed");
-    } catch (e) {
-      debugPrint("Error resetting app state: $e");
-    }
-  }
-
-  // Add method to clear any persistent cache
-  Future<void> _clearPersistentCache() async {
-    try {
-      // You can add any additional cache clearing here
-      // For example, if you're using any other caching mechanisms
-      debugPrint("Persistent cache cleared");
-    } catch (e) {
-      debugPrint("Error clearing persistent cache: $e");
-    }
-  }
-
   Future<void> loadSavedCredentials() async {
     final savedEmail =
         await SharedPrefsHelper.getString(AppConstants.savedEmail);
@@ -435,46 +563,44 @@ class AuthController extends GetxController {
     final savedRememberMe =
         await SharedPrefsHelper.getBool(AppConstants.rememberMe) ?? false;
 
-    if (savedRememberMe) {
-      emailController.value.text = savedEmail ?? '';
-      passController.value.text = savedPassword ?? '';
+    if (savedRememberMe && !_isDisposed) {
+      emailController.text = savedEmail ?? '';
+      passController.text = savedPassword ?? '';
       rememberMe.value = true;
     }
   }
 
   ///============================ Google Sign In =========================
-  RxBool googleSignInLoading = false.obs;
-
   Future<void> signInWithGoogle({required BuildContext context}) async {
     googleSignInLoading.value = true;
 
     try {
-      print('=== Google Sign-In Controller Method ===');
+      debugPrint('=== Google Sign-In Controller Method ===');
 
-      // Google Sign-In configuration
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
         serverClientId:
             '418880569981-1ibh3bv48t8c8tla9cudp6o5q59elg0i.apps.googleusercontent.com',
       );
 
-      // Clear any existing sign-in
       await googleSignIn.signOut();
 
-      // Start the sign-in process
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      debugPrint('Google User: $googleUser');
 
       if (googleUser == null) {
-        print('User cancelled Google Sign-In');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google sign-in was cancelled')),
+        debugPrint('User cancelled Google Sign-In');
+        _showAwesomeSnackbar(
+          context,
+          title: AppStrings.info.tr,
+          message: 'Google sign-in was cancelled',
+          contentType: ContentType.warning,
         );
         return;
       }
 
-      print('SUCCESS: Google User obtained: ${googleUser.email}');
+      debugPrint('SUCCESS: Google User obtained: ${googleUser.email}');
 
-      // Get authentication details
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
       final String? accessToken = googleAuth.accessToken;
@@ -483,26 +609,22 @@ class AuthController extends GetxController {
         throw Exception('Failed to get access token from Google');
       }
 
-      // Send access_token to Django backend
-      print('Sending Google token to backend...');
-      var response = await apiClient.post(
+      debugPrint('Sending Google token to backend...');
+      Response response = await apiClient.post(
         showResult: true,
         body: {'access_token': accessToken},
         isBasic: true,
-        url: 'http://10.0.70.145:8001/dj-rest-auth/google/',
+        url: ApiUrl.googleAuth.addBaseUrl,
+        duration: 30,
       );
 
-      print('Backend Response Status: ${response.statusCode}');
-      print('Backend Response Body: ${response.body}');
+      debugPrint('Backend Response Status: ${response.statusCode}');
+      debugPrint('Backend Response Body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // FIRST - Clear all app state completely
-        await _resetAppState();
-
-        // SECOND - Clear SharedPreferences
+        // Clear user data but don't reset app state aggressively
         await _clearAllUserData();
 
-        // THIRD - Save new user data from Google OAuth response
         await SharedPrefsHelper.setString(
             AppConstants.fullName,
             response.body["full_name"] ??
@@ -515,7 +637,6 @@ class AuthController extends GetxController {
         await SharedPrefsHelper.setString(AppConstants.image,
             response.body["image"]?.toString() ?? googleUser.photoUrl ?? "");
 
-        // Save JWT tokens (same as regular login)
         await SharedPrefsHelper.setString(
             AppConstants.token, response.body["access"] ?? "");
 
@@ -528,35 +649,31 @@ class AuthController extends GetxController {
         await SharedPrefsHelper.setInt(
             AppConstants.userID, response.body["id"] ?? 0);
 
-        // Set test flag for Google users
         await SharedPrefsHelper.setString(
             "test", response.body["role"] == "admin" ? "admin" : "user");
 
         debugPrint("Google login successful, navigating to home...");
-        debugPrint("User ID: ${response.body["id"]}");
-        debugPrint("User Role: ${response.body["role"]}");
 
-        // Navigate to home using the same method as regular login
-        AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
-
-        // Show success message
         final userName = response.body["full_name"] ??
             '${response.body["first_name"] ?? ""} ${response.body["last_name"] ?? ""}'
                 .trim();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Welcome ${userName.isNotEmpty ? userName : googleUser.displayName ?? 'User'}!'),
-            backgroundColor: Colors.green,
-          ),
+        _showAwesomeSnackbar(
+          context,
+          title: AppStrings.welcomeTitle.tr,
+          message:
+              'Welcome ${userName.isNotEmpty ? userName : googleUser.displayName ?? 'User'}!',
+          contentType: ContentType.success,
         );
+
+        // Add delay and navigate without destroying controllers
+        await Future.delayed(const Duration(milliseconds: 500));
+        AppRouter.route.pushReplacement(RoutePath.home.addBasePath);
       } else {
-        // Handle error response using the same method as regular login
         checkApi(response: response, context: context);
       }
     } catch (e) {
-      print('Google Sign-In Error: $e');
+      debugPrint('Google Sign-In Error: $e');
 
       String errorMessage = e.toString();
       if (errorMessage.contains('network') ||
@@ -570,15 +687,14 @@ class AuthController extends GetxController {
         errorMessage = 'Google sign-in failed: Please try again';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red,
-        ),
+      _showAwesomeSnackbar(
+        context,
+        title: AppStrings.error.tr,
+        message: errorMessage,
+        contentType: ContentType.failure,
       );
     } finally {
       googleSignInLoading.value = false;
-      googleSignInLoading.refresh();
     }
   }
 }

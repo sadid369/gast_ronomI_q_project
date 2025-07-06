@@ -28,6 +28,7 @@
 //   final double focusedBorderWidth;
 //   final bool showCounter;
 //   final ValueChanged<String>? onChanged;
+//   final String? Function(String?)? validator; // ADD THIS LINE
 
 //   const CustomTextFormField({
 //     Key? key,
@@ -57,6 +58,7 @@
 //     this.enabledBorderWidth = 1.5,
 //     this.focusedBorderWidth = 1.8,
 //     this.showCounter = true,
+//     this.validator, // ADD THIS LINE
 //   }) : super(key: key);
 
 //   @override
@@ -64,25 +66,11 @@
 // }
 
 // class _CustomTextFormFieldState extends State<CustomTextFormField> {
-//   late bool _obscureText;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _obscureText = widget.obscureText;
-//   }
-
 //   void _toggleObscureText() {
-//     // If there's a custom tap handler, call it
 //     if (widget.onSuffixIconTap != null) {
 //       widget.onSuffixIconTap!();
 //     }
-//     // Otherwise, toggle the obscure text state if this field is for passwords
-//     else if (widget.obscureText) {
-//       setState(() {
-//         _obscureText = !_obscureText;
-//       });
-//     }
+//     // Removed internal toggle, now fully controlled outside
 //   }
 
 //   @override
@@ -110,10 +98,7 @@
 //       suffixIconWidget = GestureDetector(
 //         onTap: _toggleObscureText,
 //         child: Icon(
-//           // Change the icon based on obscure state if this is a password field
-//           widget.obscureText
-//               ? (_obscureText ? Icons.visibility_off : Icons.visibility)
-//               : widget.suffixIcon,
+//           widget.suffixIcon,
 //           color: Colors.black.withOpacity(0.5),
 //           size: 17,
 //         ),
@@ -123,13 +108,14 @@
 //     return TextFormField(
 //       onChanged: widget.onChanged,
 //       controller: widget.controller,
-//       obscureText: _obscureText,
+//       obscureText: widget.obscureText,
 //       keyboardType: widget.keyboardType,
 //       maxLength: widget.maxLength,
 //       textAlign: widget.textAlign,
 //       textAlignVertical: widget.textAlignVertical ?? TextAlignVertical.center,
 //       focusNode: widget.focusNode,
 //       style: widget.style,
+//       validator: widget.validator, // ADD THIS LINE
 //       decoration: InputDecoration(
 //         labelText: widget.labelText,
 //         floatingLabelBehavior: widget.labelText != null
@@ -174,6 +160,20 @@
 //             width: widget.focusedBorderWidth,
 //           ),
 //         ),
+//         errorBorder: OutlineInputBorder(
+//           borderRadius: borderRadius,
+//           borderSide: BorderSide(
+//             color: Colors.red,
+//             width: widget.enabledBorderWidth,
+//           ),
+//         ),
+//         focusedErrorBorder: OutlineInputBorder(
+//           borderRadius: borderRadius,
+//           borderSide: BorderSide(
+//             color: Colors.red,
+//             width: widget.focusedBorderWidth,
+//           ),
+//         ),
 //       ),
 //     );
 //   }
@@ -208,6 +208,7 @@ class CustomTextFormField extends StatefulWidget {
   final double focusedBorderWidth;
   final bool showCounter;
   final ValueChanged<String>? onChanged;
+  final String? Function(String?)? validator; // ADD THIS LINE
 
   const CustomTextFormField({
     Key? key,
@@ -237,6 +238,7 @@ class CustomTextFormField extends StatefulWidget {
     this.enabledBorderWidth = 1.5,
     this.focusedBorderWidth = 1.8,
     this.showCounter = true,
+    this.validator, // ADD THIS LINE
   }) : super(key: key);
 
   @override
@@ -276,11 +278,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       suffixIconWidget = GestureDetector(
         onTap: _toggleObscureText,
         child: Icon(
-          widget.obscureText
-              ? (widget.obscureText
-                  ? Icons.visibility_off
-                  : Icons.visibility) // always use widget.obscureText here
-              : widget.suffixIcon,
+          widget.suffixIcon,
           color: Colors.black.withOpacity(0.5),
           size: 17,
         ),
@@ -297,6 +295,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       textAlignVertical: widget.textAlignVertical ?? TextAlignVertical.center,
       focusNode: widget.focusNode,
       style: widget.style,
+      validator: widget.validator, // ADD THIS LINE
       decoration: InputDecoration(
         labelText: widget.labelText,
         floatingLabelBehavior: widget.labelText != null
@@ -338,6 +337,20 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           borderRadius: borderRadius,
           borderSide: BorderSide(
             color: widget.focusedBorderColor,
+            width: widget.focusedBorderWidth,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(
+            color: Colors.red,
+            width: widget.enabledBorderWidth,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(
+            color: Colors.red,
             width: widget.focusedBorderWidth,
           ),
         ),

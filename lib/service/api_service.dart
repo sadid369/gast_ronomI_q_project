@@ -110,8 +110,8 @@ class ApiClient {
 
       log.e(stackrace.toString());
       if (context != null && context.mounted) {
-        showSnackBar(
-            context: context, content: 'Error Alert on Client Exception');
+        // showSnackBar(
+        //     context: context, content: 'Error Alert on Client Exception');
         context.pushNamed(RoutePath.errorScreen);
       }
       return const Response(

@@ -22,18 +22,18 @@ class AdminSignUpScreen extends StatefulWidget {
 
 class AdminSignUpScreenState extends State<AdminSignUpScreen> {
   final AuthController _authController = Get.find<AuthController>();
-  bool _rememberMe = false;
-  bool _passwordVisible = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Obx(
-        () => SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Form(
+                key: _authController.signUpFormKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -50,7 +50,6 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
                     _buildPasswordField(),
                     Gap(35.h),
                     _buildConfirmPasswordField(),
-                    // _buildRememberMeCheckbox(),
                     Gap(33.h),
                     _buildSignUpButton(context),
                     Gap(15.h),
@@ -96,11 +95,12 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
 
   Widget _buildFullNameField() {
     return CustomTextFormField(
-      controller: _authController.fullNameController.value,
+      controller: _authController.fullNameController, // Remove .value
       labelText: AppStrings.fullName.tr,
       hintText: AppStrings.enterYourFullName.tr,
       suffixIcon: Icons.person_outline,
       obscureText: false,
+      validator: _authController.validateFullName,
       hintStyle: AppStyle.roboto14w500CB3B3B3,
       style: AppStyle.roboto16w500C545454,
       labelStyle: AppStyle.roboto14w500C000000,
@@ -113,11 +113,13 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
 
   Widget _buildEmailField() {
     return CustomTextFormField(
-      controller: _authController.emailController.value,
+      controller: _authController.emailController, // Remove .value
       labelText: AppStrings.email.tr,
       hintText: AppStrings.enterYourEmailHint.tr,
       suffixIcon: Icons.email_outlined,
       obscureText: false,
+      validator: _authController.validateEmail,
+      keyboardType: TextInputType.emailAddress,
       hintStyle: AppStyle.roboto14w500CB3B3B3,
       style: AppStyle.roboto16w500C545454,
       labelStyle: AppStyle.roboto14w500C000000,
@@ -129,71 +131,61 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
   }
 
   Widget _buildPasswordField() {
-    return CustomTextFormField(
-      controller: _authController.passController.value,
-      labelText: AppStrings.password.tr,
-      hintText: AppStrings.password.tr,
-      suffixIcon: _passwordVisible
-          ? Icons.visibility_outlined
-          : Icons.visibility_off_outlined,
-      obscureText: !_passwordVisible,
-      onSuffixIconTap: _togglePasswordVisibility,
-      hintStyle: AppStyle.roboto14w500CB3B3B3,
-      style: AppStyle.roboto16w500C545454,
-      labelStyle: AppStyle.roboto14w500C000000,
-      enabledBorderColor: AppColors.black30opacity4D000000,
-      focusedBorderColor: AppColors.yellowFFD673,
-      fillColor: Colors.white,
-      contentPadding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
-    );
+    return Obx(() => CustomTextFormField(
+          controller: _authController.passController, // Remove .value
+          labelText: AppStrings.password.tr,
+          hintText: AppStrings.password.tr,
+          suffixIcon: _authController.passwordVisible.value
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined,
+          obscureText: !_authController.passwordVisible.value,
+          onSuffixIconTap: _authController.togglePasswordVisibility,
+          validator: _authController.validatePassword,
+          hintStyle: AppStyle.roboto14w500CB3B3B3,
+          style: AppStyle.roboto16w500C545454,
+          labelStyle: AppStyle.roboto14w500C000000,
+          enabledBorderColor: AppColors.black30opacity4D000000,
+          focusedBorderColor: AppColors.yellowFFD673,
+          fillColor: Colors.white,
+          contentPadding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
+        ));
   }
 
   Widget _buildConfirmPasswordField() {
-    return CustomTextFormField(
-      controller: _authController.confirmController.value,
-      labelText: AppStrings.confirmPasswordHint.tr,
-      hintText: AppStrings.confirmPasswordHint.tr,
-      suffixIcon: _passwordVisible
-          ? Icons.visibility_outlined
-          : Icons.visibility_off_outlined,
-      obscureText: !_passwordVisible,
-      onSuffixIconTap: _togglePasswordVisibility,
-      hintStyle: AppStyle.roboto14w500CB3B3B3,
-      style: AppStyle.roboto16w500C545454,
-      labelStyle: AppStyle.roboto14w500C000000,
-      enabledBorderColor: AppColors.black30opacity4D000000,
-      focusedBorderColor: AppColors.yellowFFD673,
-      fillColor: Colors.white,
-      contentPadding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
-    );
+    return Obx(() => CustomTextFormField(
+          controller: _authController.confirmController, // Remove .value
+          labelText: AppStrings.confirmPasswordHint.tr,
+          hintText: AppStrings.confirmPasswordHint.tr,
+          suffixIcon: _authController.confirmPasswordVisible.value
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined,
+          obscureText: !_authController.confirmPasswordVisible.value,
+          onSuffixIconTap: _authController.toggleConfirmPasswordVisibility,
+          validator: _authController.validateConfirmPassword,
+          hintStyle: AppStyle.roboto14w500CB3B3B3,
+          style: AppStyle.roboto16w500C545454,
+          labelStyle: AppStyle.roboto14w500C000000,
+          enabledBorderColor: AppColors.black30opacity4D000000,
+          focusedBorderColor: AppColors.yellowFFD673,
+          fillColor: Colors.white,
+          contentPadding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 14.h),
+        ));
   }
 
-  // Widget _buildRememberMeCheckbox() {
-  //   return Row(
-  //     children: [
-  //       Checkbox(
-  //         value: _rememberMe,
-  //         onChanged: _onRememberMeChanged,
-  //         activeColor: AppColors.yellowFFD673,
-  //       ),
-  //       Text(
-  //         AppStrings.rememberMe.tr,
-  //         style: AppStyle.roboto14w400C000000,
-  //       ),
-  //     ],
-  //   );
-  // }
-
   Widget _buildSignUpButton(BuildContext context) {
-    return AppButton(
-      text: AppStrings.signUp.tr,
-      onPressed: () => _authController.signup(context: context),
-      width: double.infinity,
-      height: 48.h,
-      backgroundColor: AppColors.yellowFFD673,
-      borderRadius: 8,
-      textStyle: AppStyle.inter16w700CFFFFFF,
-    );
+    return Obx(() => AppButton(
+          text: AppStrings.signUp.tr,
+          onPressed: _authController.signUpLoading.value
+              ? null
+              : () => _authController.signup(context: context),
+          width: double.infinity,
+          height: 48.h,
+          backgroundColor: AppColors.yellowFFD673,
+          borderRadius: 8,
+          textStyle: AppStyle.inter16w700CFFFFFF,
+          isLoading: _authController
+              .signUpLoading.value, // Use the built-in loading parameter
+        ));
   }
 
   Widget _buildSignInOption(BuildContext context) {
@@ -248,10 +240,15 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
           onTap: _signInWithApple,
         ),
         Gap(15.w),
-        _buildSocialIcon(
-          iconPath: Assets.icons.google.path,
-          onTap: _signInWithGoogle,
-        ),
+        Obx(() => _authController.googleSignInLoading.value
+            ? const CircularProgressIndicator(
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.yellowFFD673),
+              )
+            : _buildSocialIcon(
+                iconPath: Assets.icons.google.path,
+                onTap: () => _authController.signInWithGoogle(context: context),
+              )),
       ],
     );
   }
@@ -270,23 +267,9 @@ class AdminSignUpScreenState extends State<AdminSignUpScreen> {
   }
 
   // Event handlers
-  void _togglePasswordVisibility() {
-    setState(() {
-      _passwordVisible = !_passwordVisible;
-    });
-  }
-
-  // void _onRememberMeChanged(bool? value) {
-  //   setState(() {
-  //     _rememberMe = value ?? false;
-  //   });
-  // }
-
   void _signInWithApple() {
-    // Implement Apple sign in
-  }
-
-  void _signInWithGoogle() {
-    // Implement Google sign in
+    // Implement Apple sign in or use controller method
+    // You can implement this similar to Google sign in
+    Get.snackbar(AppStrings.info.tr, "Apple sign-in not implemented yet");
   }
 }

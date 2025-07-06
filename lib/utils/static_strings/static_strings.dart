@@ -55,13 +55,13 @@ class AppStrings {
   static const String confirmPassword =
       'Your password has been successfully reset. Click confirm to set a new password';
   static RegExp emailRegexp = RegExp(
-      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+$");
   static const String password = "Password";
   static const String passwordHint = "********";
   static const String passWordMustBeAtLeast =
       "Password must contain at least one uppercase letter, one lowercase letter, one number";
-  static RegExp passRegexp =
-      RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$');
+  static RegExp passwordRegex =
+      RegExp(r'^(?=.*[a-zA-Z])(?=.*\d)(?!^\d+$)(?!^[a-zA-Z]+$).{8,}$');
   static const fieldCantNotBeEmpty = "Field can't be empty";
   static const String passwordLengthAndContain =
       "Password must be at least 8 characters long and at least one uppercase letter, one lowercase letter, one number";
@@ -145,4 +145,36 @@ class AppStrings {
   static const freeTrialFor = 'Free Trial For';
   static const sevenDays = '7days';
   static const all = 'All';
+  /////////////////////////////////////////////////////
+  static const String fullNameRequired = "Full name is required";
+  static const String fullNameMinLength =
+      "Full name must be at least 2 characters";
+  static const String emailRequired = "Email is required";
+  static const String enterValidEmail = "Please enter a valid email address";
+  static const String passwordRequired = "Password is required";
+  static const String confirmPasswordRequired = "Confirm password is required";
+  static const String passwordsDoNotMatch = "Passwords do not match";
+  static const String validationError = "Validation Error";
+  static const String pleaseFixErrors = "Please fix the errors and try again";
+  static const String success = "Success";
+  static const String error = "Error";
+  static const String warning = "Warning";
+  static const String info = "Information";
+  static const String accountCreatedSuccessfully =
+      "Account created successfully";
+  static const String failedToCreateAccount =
+      "Failed to create account. Please try again";
+  static const String pleaseEnterEmail = "Please enter your email";
+  static const String welcomeTitle = "Welcome!";
+  static const String adminLoginSuccessful = "Admin login successful";
+  static const String userLoginSuccessful = "User login successful";
+  static const String invalidCredentials = "Invalid Credentials";
+  static const String enterAdminOrUser =
+      "Please enter 'admin' or 'user' as email";
+  static const String passwordResetLinkSent =
+      "Password reset link sent to your email";
+  static const String failedToSendResetLink =
+      "Failed to send reset link. Please try again";
+  static const String googleLoginNotImplemented =
+      "Google login not implemented yet";
 }
