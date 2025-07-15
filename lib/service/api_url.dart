@@ -1,5 +1,5 @@
 class ApiUrl {
-  static const baseUrl = "http://10.10.7.85:8000"; // LOCAL
+  static const baseUrl = "http://10.10.7.85:8001"; // LOCAL
   static const imageBaseUrl = '$baseUrl';
 
   static const confirmSubscription =

@@ -138,6 +138,8 @@ dependencies:
   google_sign_in: ^6.1.5
   awesome_snackbar_content: ^0.1.6
   awesome_dialog: ^3.2.1
+  purchases_flutter: ^8.10.6
+  purchases_ui_flutter: ^8.10.6
   
   
   

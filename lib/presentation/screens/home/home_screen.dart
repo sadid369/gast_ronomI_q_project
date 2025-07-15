@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get/get.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 import '../../../service/payment_service.dart';
 import '../../widgets/subscription_plans/subscription_plans.dart';
 import '../profile/controller/profile_controller.dart';
@@ -116,6 +117,21 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     });
+  }
+
+  // final paywallResult = await RevenueCatUI.presentPaywallIfNeeded('pro');
+  //       log("Paywall result: $paywallResult");
+  //       //log error if paywall fails
+  //       log("Paywall result: ${paywallResult}.
+  Future<void> _showSubscriptionPlansAndPay() async {
+    try {
+      final paywallResult = await RevenueCatUI.presentPaywallIfNeeded('pro');
+      log("Paywall result: $paywallResult");
+      //log error if paywall fails
+      log("Paywall result: ${paywallResult}. If you see an error, check your RevenueCat setup.");
+    } catch (e) {
+      log("Error showing paywall: $e");
+    }
   }
 
   @override
@@ -622,46 +638,46 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showSubscriptionPlansAndPay() async {
-    try {
-      // Show loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+  // void _showSubscriptionPlansAndPay() async {
+  //   try {
+  //     // Show loading
+  //     showDialog(
+  //       context: context,
+  //       barrierDismissible: false,
+  //       builder: (context) => const Center(child: CircularProgressIndicator()),
+  //     );
 
-      // Fetch plans
-      final plans = await PaymentService.getSubscriptionPlans();
+  //     // Fetch plans
+  //     final plans = await PaymentService.getSubscriptionPlans();
 
-      // Dismiss loading
-      Navigator.of(context, rootNavigator: true).pop();
+  //     // Dismiss loading
+  //     Navigator.of(context, rootNavigator: true).pop();
 
-      // Show plans
-      if (context.mounted) {
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => SubscriptionPlansBottomSheet(
-            plans: plans,
-            onSubscribe: (selectedPlan) async {
-              await PaymentService.handlePayment(
-                selectedPlan.planId,
-                context,
-                planName: selectedPlan.name,
-              );
-            },
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
-    }
-  }
+  //     // Show plans
+  //     if (context.mounted) {
+  //       await showModalBottomSheet(
+  //         context: context,
+  //         isScrollControlled: true,
+  //         backgroundColor: Colors.transparent,
+  //         builder: (_) => SubscriptionPlansBottomSheet(
+  //           plans: plans,
+  //           onSubscribe: (selectedPlan) async {
+  //             await PaymentService.handlePayment(
+  //               selectedPlan.planId,
+  //               context,
+  //               planName: selectedPlan.name,
+  //             );
+  //           },
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     if (context.mounted) {
+  //       Navigator.of(context, rootNavigator: true).pop();
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Error: ${e.toString()}')),
+  //       );
+  //     }
+  //   }
+  // }
 }
