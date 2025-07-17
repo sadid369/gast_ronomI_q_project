@@ -15,7 +15,7 @@
 // import "package:purchases_flutter/purchases_flutter.dart";
 // import "package:purchases_ui_flutter/purchases_ui_flutter.dart";
 // // Import your Language translations class
-// // Android Account: nicklas212 PW: temporaryPW1616
+// // Android Account: nicklasbaeumer@googlemail.com PW: temporaryPW1616
 // // Apple Account: nicklasbaeumer1@googlemail.com PW: temporaryPW1616
 // // renevue cat email: nicklasbaeumer@googlemail.com
 // // PW: temporaryPW1616
@@ -91,6 +91,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get/get.dart';
 import 'package:camera/camera.dart';
 import 'package:groc_shopy/utils/static_strings/static_strings.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'core/routes/routes.dart';
 import 'dependency_injection/getx_injection.dart';
 import 'dependency_injection/path.dart';

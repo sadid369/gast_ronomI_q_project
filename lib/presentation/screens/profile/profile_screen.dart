@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_paypal/flutter_paypal.dart';
@@ -12,6 +13,7 @@ import 'package:groc_shopy/core/custom_assets/assets.gen.dart';
 import 'package:groc_shopy/utils/app_colors/app_colors.dart';
 import 'package:groc_shopy/utils/static_strings/static_strings.dart';
 import 'package:groc_shopy/utils/text_style/text_style.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 import '../../../core/routes/route_path.dart';
 import '../../../global/model/user_order_list.dart';
@@ -467,48 +469,58 @@ Widget receiptItemFromOrder(Order order, void Function() onImageTap) {
 class UpgradeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Future<void> _showSubscriptionPlansAndPay() async {
+    //   try {
+    //     // Show loading using root navigator
+    //     showDialog(
+    //       context: context,
+    //       barrierDismissible: false,
+    //       builder: (context) =>
+    //           const Center(child: CircularProgressIndicator()),
+    //     );
+
+    //     // Fetch plans
+    //     final plans = await PaymentService.getSubscriptionPlans();
+
+    //     // Dismiss loading
+    //     Navigator.of(context, rootNavigator: true).pop();
+
+    //     // Show plans using root navigator
+    //     if (context.mounted) {
+    //       await showModalBottomSheet(
+    //         context: context,
+    //         isScrollControlled: true,
+    //         backgroundColor: Colors.transparent,
+    //         builder: (_) => SubscriptionPlansBottomSheet(
+    //           plans: plans,
+    //           onSubscribe: (selectedPlan) async {
+    //             // Navigator.of(context).pop(); // Close plans sheet
+    //             await PaymentService.handlePayment(
+    //               selectedPlan.planId,
+    //               context,
+    //               planName: selectedPlan.name,
+    //             );
+    //           },
+    //         ),
+    //       );
+    //     }
+    //   } catch (e) {
+    //     if (context.mounted) {
+    //       Navigator.of(context, rootNavigator: true).pop();
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         SnackBar(content: Text('Error: ${e.toString()}')),
+    //       );
+    //     }
+    //   }
+    // }
     Future<void> _showSubscriptionPlansAndPay() async {
       try {
-        // Show loading using root navigator
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) =>
-              const Center(child: CircularProgressIndicator()),
-        );
-
-        // Fetch plans
-        final plans = await PaymentService.getSubscriptionPlans();
-
-        // Dismiss loading
-        Navigator.of(context, rootNavigator: true).pop();
-
-        // Show plans using root navigator
-        if (context.mounted) {
-          await showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (_) => SubscriptionPlansBottomSheet(
-              plans: plans,
-              onSubscribe: (selectedPlan) async {
-                // Navigator.of(context).pop(); // Close plans sheet
-                await PaymentService.handlePayment(
-                  selectedPlan.planId,
-                  context,
-                  planName: selectedPlan.name,
-                );
-              },
-            ),
-          );
-        }
+        final paywallResult = await RevenueCatUI.presentPaywallIfNeeded('pro');
+        log("Paywall result: $paywallResult");
+        //log error if paywall fails
+        log("Paywall result: ${paywallResult}. If you see an error, check your RevenueCat setup.");
       } catch (e) {
-        if (context.mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
-          );
-        }
+        log("Error presenting paywall: $e");
       }
     }
 

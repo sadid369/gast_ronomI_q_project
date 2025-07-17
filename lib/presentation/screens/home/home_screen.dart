@@ -85,7 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
     transCtrl.fetchHistory();
     _loadProfileImage();
     _loadUserRole(); // Add this line
-    _showSubscriptionModal();
+    // _showSubscriptionModal();
+    _showSubscriptionPlansAndPay();
   }
 
   Future<void> _loadProfileImage() async {

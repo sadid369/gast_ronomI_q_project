@@ -51,7 +51,6 @@
 # #   assets: true
 # #   integrations:
 # #     flutter_svg: true
-    
 
 #   # The "flutter_lints" package below contains a set of recommended lints to
 #   # encourage good coding practices. The lint set provided by the package is
@@ -103,7 +102,7 @@
 #   # see https://flutter.dev/to/font-from-package
 name: groc_shopy
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -140,9 +139,8 @@ dependencies:
   awesome_dialog: ^3.2.1
   purchases_flutter: ^8.10.6
   purchases_ui_flutter: ^8.10.6
-  
-  
-  
+  sign_in_with_apple: ^7.0.1
+  in_app_purchase: ^3.1.13
 
 dev_dependencies:
   build_runner: ^2.4.10
@@ -165,7 +163,6 @@ flutter_launcher_icons:
   ios:
     remove_alpha_ios: true
   image_path: "assets/icons/icon.png"
-
 
 flutter:
   uses-material-design: true
